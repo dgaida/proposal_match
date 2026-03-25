@@ -1,6 +1,6 @@
 import streamlit as st
-import json
 import os
+from dotenv import load_dotenv
 from app.services.llm_service import LLMService
 from app.services.scraper_service import ScraperService
 from app.services.analyzer_service import AnalyzerService
@@ -10,6 +10,9 @@ from app.services.matching_service import MatchingService
 from app.services.linkedin_service import LinkedInService
 from app.utils.db_manager import DBManager
 from app.utils.vector_store import VectorStore
+
+# Load credentials from secrets.env if it exists
+load_dotenv("secrets.env")
 
 # Page Configuration
 st.set_page_config(page_title="Funding Research App", layout="wide")
@@ -22,9 +25,23 @@ if "vector_store" not in st.session_state:
 
 # LLM Service Initialization
 def get_llm_service():
-    provider = st.sidebar.selectbox("LLM Provider", ["openai", "groq", "gemini", "ollama"], index=0)
-    api_key = st.sidebar.text_input(f"{provider.capitalize()} API Key", type="password")
-    model = st.sidebar.text_input("Model (Optional)", value="")
+    providers = ["openai", "groq", "gemini", "ollama"]
+    env_provider = os.getenv("LLM_PROVIDER", "openai").lower()
+    default_index = providers.index(env_provider) if env_provider in providers else 0
+
+    provider = st.sidebar.selectbox("LLM Provider", providers, index=default_index)
+
+    # Get default API key based on provider
+    default_api_key = ""
+    if provider == "openai":
+        default_api_key = os.getenv("OPENAI_API_KEY", "")
+    elif provider == "groq":
+        default_api_key = os.getenv("GROQ_API_KEY", "")
+    elif provider == "gemini":
+        default_api_key = os.getenv("GEMINI_API_KEY", "")
+
+    api_key = st.sidebar.text_input(f"{provider.capitalize()} API Key", value=default_api_key, type="password")
+    model = st.sidebar.text_input("Model (Optional)", value=os.getenv("LLM_MODEL", ""))
 
     if api_key or provider == "ollama":
         return LLMService(provider=provider, api_key=api_key, llm_model=model if model else None)
@@ -34,10 +51,10 @@ llm_service = get_llm_service()
 
 # Sidebar - Settings
 st.sidebar.title("Settings")
-fit_username = st.sidebar.text_input("FIT Username")
-fit_password = st.sidebar.text_input("FIT Password", type="password")
-li_username = st.sidebar.text_input("LinkedIn Username")
-li_password = st.sidebar.text_input("LinkedIn Password", type="password")
+fit_username = st.sidebar.text_input("FIT Username", value=os.getenv("FIT_USERNAME", ""))
+fit_password = st.sidebar.text_input("FIT Password", value=os.getenv("FIT_PASSWORD", ""), type="password")
+li_username = st.sidebar.text_input("LinkedIn Username", value=os.getenv("LINKEDIN_USERNAME", ""))
+li_password = st.sidebar.text_input("LinkedIn Password", value=os.getenv("LINKEDIN_PASSWORD", ""), type="password")
 
 # Main Header
 st.title("Funding Research and Collaboration App")
@@ -108,10 +125,10 @@ with tab3:
     if st.button("Index Companies"):
         links = []
         if company_links_input:
-            links.extend([l.strip() for l in company_links_input.split("\n") if l.strip()])
+            links.extend([link_item.strip() for link_item in company_links_input.split("\n") if link_item.strip()])
         if uploaded_file:
             content = uploaded_file.read().decode("utf-8")
-            links.extend([l.strip() for l in content.split("\n") if l.strip()])
+            links.extend([link_item.strip() for link_item in content.split("\n") if link_item.strip()])
 
         if links:
             indexer = IndexingService(llm_service, st.session_state.db_manager, st.session_state.vector_store)

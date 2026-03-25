@@ -1,0 +1,21 @@
+name: funding-app
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+    - git+https://github.com/dgaida/llm_client.git
+    - streamlit
+    - beautifulsoup4
+    - httpx
+    - chromadb
+    - sqlalchemy
+    - pytest
+    - pydantic
+    - python-dotenv
+    - duckduckgo-search
+    - linkedin_api
+    - pydantic-settings
+    - ruff
