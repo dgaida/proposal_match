@@ -1,7 +1,6 @@
-import pytest
 from unittest.mock import MagicMock, patch
 from app.services.matching_service import MatchingService
-from app.utils.db_manager import DBManager, Company
+from app.utils.db_manager import Company
 from app.utils.vector_store import VectorStore
 from app.services.llm_service import LLMService
 

@@ -1,8 +1,6 @@
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from app.services.scraper_service import ScraperService
 from app.services.analyzer_service import AnalyzerService
-from app.services.llm_service import LLMService
 
 def test_scraper_service():
     """

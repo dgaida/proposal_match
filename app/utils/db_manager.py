@@ -1,7 +1,7 @@
 import os
 from sqlalchemy import Column, Integer, String, Boolean, Text, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 Base = declarative_base()
 
@@ -36,7 +36,7 @@ class DBManager:
         if company_data_copy.get('employees_count') and not isinstance(company_data_copy['employees_count'], int):
             try:
                 company_data_copy['employees_count'] = int(company_data_copy['employees_count'])
-            except:
+            except (ValueError, TypeError):
                 company_data_copy['employees_count'] = None
 
         company = Company(**company_data_copy)
