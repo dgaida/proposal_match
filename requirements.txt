@@ -1,0 +1,12 @@
+llm-client
+streamlit
+beautifulsoup4
+httpx
+chromadb
+sqlalchemy
+pytest
+pydantic
+python-dotenv
+duckduckgo-search
+linkedin_api
+pydantic-settings
