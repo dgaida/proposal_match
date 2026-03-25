@@ -1,8 +1,11 @@
+import os
 import chromadb
 from typing import List, Dict, Any, Optional
 
 class VectorStore:
     def __init__(self, persist_directory: str = "data/chroma_db"):
+        # Ensure data directory exists
+        os.makedirs("data", exist_ok=True)
         self.client = chromadb.PersistentClient(path=persist_directory)
         self.collection = self.client.get_or_create_collection(name="companies")
 

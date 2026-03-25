@@ -1,4 +1,4 @@
-llm-client
+git+https://github.com/dgaida/llm_client.git
 streamlit
 beautifulsoup4
 httpx
@@ -10,3 +10,4 @@ python-dotenv
 duckduckgo-search
 linkedin_api
 pydantic-settings
+ruff

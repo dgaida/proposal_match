@@ -1,3 +1,4 @@
+import os
 from sqlalchemy import Column, Integer, String, Boolean, Text, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 from typing import List, Dict, Any, Optional
@@ -20,6 +21,8 @@ class Company(Base):
 
 class DBManager:
     def __init__(self, db_url: str = "sqlite:///data/companies.db"):
+        # Ensure data directory exists
+        os.makedirs("data", exist_ok=True)
         self.engine = create_engine(db_url)
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
@@ -29,8 +32,6 @@ class DBManager:
         Adds a new company to the database.
         """
         session = self.Session()
-        # Create a new Company object from dictionary
-        # Handle potential data type issues (e.g., employee count might be a string)
         company_data_copy = company_data.copy()
         if company_data_copy.get('employees_count') and not isinstance(company_data_copy['employees_count'], int):
             try:
@@ -39,7 +40,6 @@ class DBManager:
                 company_data_copy['employees_count'] = None
 
         company = Company(**company_data_copy)
-        # Use merge for update/insert
         session.merge(company)
         session.commit()
         session.close()
