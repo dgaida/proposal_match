@@ -2,6 +2,14 @@
 
 A comprehensive tool to analyze research calls, find funding opportunities, and manage company collaborations with AI-powered insights.
 
+![Version](https://img.shields.io/badge/version-0.1.0-blue)
+[![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Code Quality](https://github.com/dgaida/proposal_match/actions/workflows/lint.yml/badge.svg)](https://github.com/dgaida/proposal_match/actions/workflows/lint.yml)
+[![Tests](https://github.com/dgaida/proposal_match/actions/workflows/tests.yml/badge.svg)](https://github.com/dgaida/proposal_match/actions/workflows/tests.yml)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/dgaida/proposal_match/graphs/commit-activity)
+![Last commit](https://img.shields.io/github/last-commit/dgaida/proposal_match)
+
+
 ## Features
 
 1.  **Research Call Analysis**: Extract and visualize key data (topic, deadline, budget, etc.) from any research call URL.
