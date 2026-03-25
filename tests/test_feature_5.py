@@ -1,5 +1,4 @@
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from app.services.linkedin_service import LinkedInService
 from app.services.llm_service import LLMService
 

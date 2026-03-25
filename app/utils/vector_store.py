@@ -1,6 +1,6 @@
 import os
 import chromadb
-from typing import List, Dict, Any, Optional
+from typing import Dict, Any
 
 class VectorStore:
     def __init__(self, persist_directory: str = "data/chroma_db"):

@@ -1,7 +1,5 @@
-import pytest
 from unittest.mock import MagicMock, patch
 from app.services.fit_service import FITService
-from app.services.llm_service import LLMService
 
 def test_fit_service_login():
     """

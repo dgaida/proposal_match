@@ -1,4 +1,3 @@
-import os
 import json
 from typing import List, Dict, Any, Optional
 from app.services.scraper_service import ScraperService

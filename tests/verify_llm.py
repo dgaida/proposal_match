@@ -1,6 +1,6 @@
 import sys
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 # Add the project root to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -19,10 +19,10 @@ def test_llm_service_initialization():
         llm_model = "gpt-4"
 
         # Act
-        service = LLMService(provider=provider, api_key=api_key, llm_model=llm_model)
+        _service = LLMService(provider=provider, api_key=api_key, llm_model=llm_model)
 
         # Assert
-        MockLLMClient.assert_called_once_with(provider=provider, llm=llm_model)
+        MockLLMClient.assert_called_once_with(api_choice=provider, llm=llm_model)
         assert os.environ.get("OPENAI_API_KEY") == api_key
         print("LLMService initialization test passed.")
 
@@ -35,11 +35,11 @@ def test_llm_service_chat_completion():
         mock_client_instance = MockLLMClient.return_value
         mock_client_instance.chat_completion.return_value = "Mocked Response"
 
-        service = LLMService(provider="openai", api_key="test_key")
+        _service = LLMService(provider="openai", api_key="test_key")
         messages = [{"role": "user", "content": "Hello"}]
 
         # Act
-        response = service.chat_completion(messages)
+        response = _service.chat_completion(messages)
 
         # Assert
         assert response == "Mocked Response"

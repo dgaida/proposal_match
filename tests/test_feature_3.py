@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import MagicMock, patch
 from app.services.indexing_service import IndexingService
 from app.utils.db_manager import DBManager
