@@ -15,7 +15,7 @@ dependencies = [
     "pytest",
     "pydantic",
     "python-dotenv",
-    "duckduckgo-search",
+    "ddgs",
     "linkedin_api",
     "pydantic-settings"
 ]
