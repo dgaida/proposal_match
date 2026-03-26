@@ -27,9 +27,10 @@ A comprehensive tool to analyze research calls, find funding opportunities, and 
 
 ### Local Setup
 1. Clone the repository.
-2. Install dependencies:
+2. Install dependencies and the package:
    ```bash
    pip install -r requirements.txt
+   pip install -e .
    ```
 3. Run the application:
    ```bash

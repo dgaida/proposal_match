@@ -6,12 +6,12 @@ class AnalyzerService:
     def __init__(self, llm_service: LLMService):
         self.llm_service = llm_service
 
-    def analyze_research_call(self, text: str) -> Optional[Dict[str, Any]]:
+    def analyze_research_call(self, text: str, url: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """
         Analyzes the research call text and extracts key information using the LLM.
         """
-        prompt = """
-        Analyze the research call and extract the following information in JSON format:
+        prompt = f"""
+        Analyze the research call {f'from the URL {url}' if url else ''} and extract the following information in JSON format:
         - Thema: The research topic.
         - Zielsetzung: The primary goal or objective.
         - Deadline: The application deadline.
@@ -20,6 +20,8 @@ class AnalyzerService:
         - Budget: Estimated or maximum budget for the call.
         - Laufzeit: The duration of the projects.
         - Andere_Metadaten: Any other relevant information.
+        - Link: The URL to the research call. {f'Use {url}' if url else 'Extract from text if available.'}
+        - Beschreibung: A detailed textual description of the call in German, including the most important contents, research goals, etc., formatted in Markdown.
 
         Return only the JSON object.
         """

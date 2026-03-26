@@ -1,4 +1,6 @@
 import json
+import os
+import re
 from typing import List, Dict, Any, Optional
 from app.services.scraper_service import ScraperService
 from app.services.llm_service import LLMService
@@ -66,6 +68,39 @@ class IndexingService:
         except Exception as e:
             print(f"Error extracting company info: {e}")
             return None
+
+    def index_from_folder(self, folder_path: str) -> List[str]:
+        """
+        Recursively searches for .url files in the folder and indexes the URLs.
+        """
+        indexed_urls = []
+        if not os.path.exists(folder_path):
+            return indexed_urls
+
+        for root, _, files in os.walk(folder_path):
+            for file in files:
+                if file.endswith(".url"):
+                    file_path = os.path.join(root, file)
+                    url = self._extract_url_from_file(file_path)
+                    if url:
+                        self.index_companies_from_links([url])
+                        indexed_urls.append(url)
+        return indexed_urls
+
+    def _extract_url_from_file(self, file_path: str) -> Optional[str]:
+        """
+        Extracts the URL from a .url file.
+        """
+        try:
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+                # .url files typically have a line "URL=..."
+                match = re.search(r"URL=(.+)", content)
+                if match:
+                    return match.group(1).strip()
+        except Exception as e:
+            print(f"Error reading .url file {file_path}: {e}")
+        return None
 
     def _parse_json(self, response: str) -> Optional[Dict[str, Any]]:
         """
