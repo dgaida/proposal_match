@@ -1,12 +1,12 @@
 import json
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Callable
 from app.services.llm_service import LLMService
 
 class AnalyzerService:
     def __init__(self, llm_service: LLMService):
         self.llm_service = llm_service
 
-    def analyze_research_call(self, text: str, url: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    def analyze_research_call(self, text: str, url: Optional[str] = None, status_callback: Optional[Callable[[str], None]] = None) -> Optional[Dict[str, Any]]:
         """
         Analyzes the research call text and extracts key information using the LLM.
         """
@@ -26,7 +26,7 @@ class AnalyzerService:
         Return only the JSON object.
         """
         try:
-            response = self.llm_service.extract_structured_data(text, prompt)
+            response = self.llm_service.extract_structured_data(text, prompt, status_callback=status_callback)
 
             # Use the LLM to process and format the response as JSON
             # This is to handle potential cases where the response is not perfectly formatted JSON
@@ -34,8 +34,8 @@ class AnalyzerService:
 
             return json_response
         except Exception as e:
-            print(f"Error analyzing research call: {e}")
-            return None
+            # Re-raise to let the caller handle the specific exception (useful for UI error messages)
+            raise e
 
     def _parse_json(self, response: str) -> Optional[Dict[str, Any]]:
         """

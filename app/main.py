@@ -100,12 +100,13 @@ if not llm_service:
     st.stop()
 
 # Tab Layout
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Call Summarization",
     "FIT Search",
     "Company Indexing",
     "Matching & Hybrid Search",
-    "LinkedIn Integration"
+    "LinkedIn Integration",
+    "Database View"
 ])
 
 # Feature 1: Call Summarization
@@ -120,16 +121,26 @@ with tab1:
     if st.button("Analyze Call"):
         scraper = ScraperService()
         analyzer = AnalyzerService(llm_service)
-        with st.spinner("Fetching and analyzing..."):
+        with st.status("Fetching and analyzing...") as status:
             text = scraper.fetch_page_content(call_url)
             if text:
-                result = analyzer.analyze_research_call(text, url=call_url)
-                if result:
-                    st.success("Analysis Complete!")
-                    st.session_state.last_call = result # Store for matching and persistence
-                else:
-                    st.error("Failed to analyze the call.")
+                try:
+                    result = analyzer.analyze_research_call(
+                        text,
+                        url=call_url,
+                        status_callback=lambda msg: status.update(label=msg)
+                    )
+                    if result:
+                        status.update(label="Analysis Complete!", state="complete")
+                        st.session_state.last_call = result # Store for matching and persistence
+                    else:
+                        status.update(label="Failed to analyze the call.", state="error")
+                        st.error("Failed to analyze the call: Structured data extraction returned no result.")
+                except Exception as e:
+                    status.update(label="Analysis Failed.", state="error")
+                    st.error(f"Error analyzing research call: {str(e)}")
             else:
+                status.update(label="Failed to fetch URL.", state="error")
                 st.error("Failed to fetch the URL content.")
 
     if "last_call" in st.session_state:
@@ -263,6 +274,10 @@ with tab3:
                 indexed = indexer.index_from_folder(folder_path)
                 status.update(label=f"Indexed {len(indexed)} URLs from folder.", state="complete")
             st.success(f"Successfully indexed {len(indexed)} companies from folder.")
+            if indexed:
+                with st.expander("Show indexed companies/URLs"):
+                    for url in indexed:
+                        st.write(f"- {url}")
         else:
             st.error("Invalid or empty folder path.")
 
@@ -362,3 +377,52 @@ with tab5:
                 st.warning("Please analyze a research call in the first tab first.")
     else:
         st.warning("Please provide LinkedIn credentials in the sidebar.")
+
+# Feature 6: Database View
+with tab6:
+    st.header("Indexed Companies Database")
+    if st.button("Refresh Database View"):
+        st.rerun()
+
+    companies = st.session_state.db_manager.get_all_companies()
+    if companies:
+        st.write(f"Total indexed companies: {len(companies)}")
+
+        # Convert to list of dicts for dataframe
+        data = []
+        for c in companies:
+            data.append({
+                "Name": c.name,
+                "URL": c.url,
+                "Industry": c.industry,
+                "State": c.state,
+                "City": c.city,
+                "Employees": c.employees_count,
+                "SME": c.kmu_status,
+                "Research Active": c.research_active,
+                "Summary": c.summary
+            })
+
+        st.dataframe(data, use_container_width=True)
+
+        # Detailed view in expanders
+        st.subheader("Detailed Company Profiles")
+        for c in companies:
+            with st.expander(f"{c.name or c.url}"):
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write(f"**URL:** {c.url}")
+                    st.write(f"**Industry:** {c.industry}")
+                    st.write(f"**State:** {c.state}")
+                    st.write(f"**City:** {c.city}")
+                with col2:
+                    st.write(f"**Employees:** {c.employees_count}")
+                    st.write(f"**SME:** {c.kmu_status}")
+                    st.write(f"**Research Active:** {c.research_active}")
+
+                st.write("**Summary:**")
+                st.write(c.summary)
+                st.write("**Products:**")
+                st.write(c.products)
+    else:
+        st.info("No companies indexed yet. Go to 'Company Indexing' to add some.")

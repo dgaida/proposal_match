@@ -1,4 +1,5 @@
 import httpx
+import json
 from typing import List, Dict, Any
 from app.services.llm_service import LLMService
 
@@ -12,11 +13,7 @@ class FITService:
     def login(self, username: str, password: str) -> bool:
         """
         Authenticates with Keycloak to get a bearer token.
-        Note: Implementing full Keycloak flow with direct grant for simulation.
-        Real implementation would need the correct realm and client_id discovered in investigation.
         """
-        # Keycloak Direct Grant Flow (Resource Owner Password Credentials)
-        # Assuming the realm is 'FIT' and client_id is 'web' as found
         data = {
             "grant_type": "password",
             "client_id": "web",
@@ -25,7 +22,6 @@ class FITService:
             "scope": "openid"
         }
         try:
-            # The token endpoint is usually at /realms/{realm}/protocol/openid-connect/token
             token_url = f"{self.auth_url}/realms/FIT/protocol/openid-connect/token"
             response = self.client.post(token_url, data=data)
             if response.status_code == 200:
@@ -41,12 +37,11 @@ class FITService:
 
     def search_calls(self, query: str) -> List[Dict[str, Any]]:
         """
-        Searches for calls in the FIT database.
-        Endpoint: /api/articles
+        Searches for calls in the FIT database and filters for relevance using LLM.
         """
         params = {
             "search": query,
-            "pageSize": 10,
+            "pageSize": 20, # Fetch more to allow for filtering
             "sortBy": "updatedAt",
             "descending": "true"
         }
@@ -54,18 +49,66 @@ class FITService:
             response = self.client.get(f"{self.base_url}/articles", params=params)
             response.raise_for_status()
             data = response.json()
-            # The API returns an object with 'docs' containing the articles
-            return data.get("docs", [])
+            docs = data.get("docs", [])
+
+            if not docs:
+                return []
+
+            # Post-filtering using LLM for relevance
+            return self._filter_relevant_calls(docs, query)
         except Exception as e:
             print(f"Error searching FIT: {e}")
             return []
+
+    def _filter_relevant_calls(self, docs: List[Dict[str, Any]], query: str) -> List[Dict[str, Any]]:
+        """
+        Uses the LLM to filter and rank the fetched calls based on the original query.
+        """
+        # Prepare data for LLM
+        simplified_docs = []
+        for i, d in enumerate(docs):
+            simplified_docs.append({
+                "id": i,
+                "title": d.get('title') or d.get('englishTitle'),
+                "description": d.get('shortDescription') or d.get('description')
+            })
+
+        prompt = f"""
+        Below is a list of research funding calls fetched from a database for the query: "{query}".
+        Identify which of these calls are truly relevant to the query.
+        Rank them by relevance and return only the IDs of the relevant calls as a JSON list of integers.
+        If none are relevant, return an empty list.
+
+        Calls:
+        {json.dumps(simplified_docs)}
+
+        Return format: [0, 2, 5]
+        """
+
+        messages = [
+            {"role": "system", "content": "You are an expert at filtering research funding opportunities for relevance."},
+            {"role": "user", "content": prompt}
+        ]
+
+        try:
+            response = self.llm_service.chat_completion(messages)
+            # Basic cleanup in case of extra text
+            start_index = response.find("[")
+            end_index = response.rfind("]") + 1
+            if start_index != -1 and end_index != -1:
+                relevant_ids = json.loads(response[start_index:end_index])
+                return [docs[i] for i in relevant_ids if i < len(docs)]
+            return docs[:10] # Fallback to first 10 if parsing fails
+        except Exception as e:
+            print(f"Error filtering FIT calls: {e}")
+            return docs[:10]
 
     def summarize_results(self, results: List[Dict[str, Any]]) -> str:
         """
         Summarizes the search results using the LLM.
         """
         if not results:
-            return "No results found."
+            return "No relevant results found."
 
         formatted_results = "\n\n".join([
             f"Title: {r.get('title') or r.get('englishTitle')}\nDescription: {r.get('shortDescription') or r.get('description')}"
