@@ -21,14 +21,17 @@ class LLMService:
         # Set environment variable for llm_client to pick up if provided
         if api_key:
             self.available_providers[provider] = api_key
-            if provider == "openai":
-                os.environ["OPENAI_API_KEY"] = api_key
-            elif provider == "groq":
-                os.environ["GROQ_API_KEY"] = api_key
-            elif provider == "gemini":
-                os.environ["GEMINI_API_KEY"] = api_key
+            self._set_env_key(provider, api_key)
 
         self.client = LLMClient(api_choice=provider, llm=llm_model, max_tokens=4096) if llm_model else LLMClient(api_choice=provider, max_tokens=4096)
+
+    def _set_env_key(self, provider: str, api_key: str):
+        if provider == "openai":
+            os.environ["OPENAI_API_KEY"] = api_key
+        elif provider == "groq":
+            os.environ["GROQ_API_KEY"] = api_key
+        elif provider == "gemini":
+            os.environ["GEMINI_API_KEY"] = api_key
 
     def chat_completion(self, messages: List[Dict[str, str]]) -> str:
         """
@@ -52,7 +55,7 @@ class LLMService:
                 if i > 0: # If not the first attempt, we need to switch
                     if status_callback:
                         status_callback(f"Switching to {p.capitalize()} due to error...")
-                    self.switch_config(p, self.available_providers[p], llm_model=None) # Reset model for fallback
+                    self.switch_config(p, self.available_providers[p], llm_model=None)
 
                 if status_callback:
                     model_info = f" ({self.llm_model})" if self.llm_model else ""
@@ -86,11 +89,12 @@ class LLMService:
         self.api_key = api_key
         self.llm_model = llm_model
 
-        if provider == "openai":
-            os.environ["OPENAI_API_KEY"] = api_key
-        elif provider == "groq":
-            os.environ["GROQ_API_KEY"] = api_key
-        elif provider == "gemini":
-            os.environ["GEMINI_API_KEY"] = api_key
+        self._set_env_key(provider, api_key)
 
+        # Update the internal client
         self.client.switch_provider(api_choice=provider, llm=llm_model)
+
+        # Some versions of LLMClient might not properly update the underlying client
+        # when switching if keys are passed via env vars after init.
+        # To be absolutely safe, we can re-initialize the internal client if needed,
+        # but LLMClient.switch_provider is designed for this.
