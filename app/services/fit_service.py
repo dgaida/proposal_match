@@ -1,6 +1,6 @@
 import httpx
 import json
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from app.services.llm_service import LLMService
 
 class FITService:
