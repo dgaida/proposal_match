@@ -24,6 +24,14 @@ class IndexingService:
                 extracted_data = self._extract_company_info(content, link)
                 if extracted_data:
                     # Split metadata and semantic info for storage
+                    summary = extracted_data.get("Zusammenfassung")
+                    if isinstance(summary, list):
+                        summary = "\n".join(summary)
+
+                    products = extracted_data.get("Produkte")
+                    if isinstance(products, list):
+                        products = "\n".join(products)
+
                     metadata = {
                         "name": extracted_data.get("Name"),
                         "url": link,
@@ -33,8 +41,8 @@ class IndexingService:
                         "kmu_status": extracted_data.get("KMU_Status"),
                         "industry": extracted_data.get("Branche"),
                         "research_active": extracted_data.get("Bereits_aktiv_in_Forschungsprojekten"),
-                        "summary": extracted_data.get("Zusammenfassung"),
-                        "products": extracted_data.get("Produkte")
+                        "summary": summary,
+                        "products": products
                     }
 
                     # Store in SQLite
@@ -85,6 +93,9 @@ class IndexingService:
                     if url:
                         self.index_companies_from_links([url])
                         indexed_urls.append(url)
+
+                if len(indexed_urls) >= 5:
+                    return indexed_urls
         return indexed_urls
 
     def _extract_url_from_file(self, file_path: str) -> Optional[str]:

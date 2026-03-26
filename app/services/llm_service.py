@@ -20,7 +20,7 @@ class LLMService:
             elif provider == "gemini":
                 os.environ["GEMINI_API_KEY"] = api_key
 
-        self.client = LLMClient(api_choice=provider, llm=llm_model) if llm_model else LLMClient(api_choice=provider)
+        self.client = LLMClient(api_choice=provider, llm=llm_model, max_tokens=4096) if llm_model else LLMClient(api_choice=provider, max_tokens=4096)
 
     def chat_completion(self, messages: List[Dict[str, str]]) -> str:
         """
