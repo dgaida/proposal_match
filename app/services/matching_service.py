@@ -92,6 +92,7 @@ class MatchingService:
                 "org_type": r.org_type,
                 "industry": r.industry,
                 "summary": r.summary,
+                "employees_count": r.employees_count,
                 "kmu_status": r.kmu_status
             })
 

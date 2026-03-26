@@ -23,9 +23,12 @@ class IndexingService:
             if link.startswith("http://"):
                 link = link.replace("http://", "https://", 1)
 
-            content = self.scraper_service.fetch_page_content(link)
-            if content:
-                extracted_data = self._extract_company_info(content, link)
+            scraper_result = self.scraper_service.fetch_page_content(link)
+            if scraper_result:
+                content = scraper_result["text"]
+                final_url = scraper_result["final_url"]
+
+                extracted_data = self._extract_company_info(content, final_url)
                 if extracted_data:
                     # Split metadata and semantic info for storage
                     summary = extracted_data.get("Zusammenfassung")
@@ -38,7 +41,7 @@ class IndexingService:
 
                     metadata = {
                         "name": extracted_data.get("Name"),
-                        "url": link,
+                        "url": final_url,
                         "state": extracted_data.get("Bundesland"),
                         "city": extracted_data.get("Stadt"),
                         "country": extracted_data.get("Land"),
@@ -56,7 +59,7 @@ class IndexingService:
 
                     # Store in ChromaDB
                     semantic_text = f"Company: {metadata['name']}. {metadata['summary']} Products: {metadata['products']}"
-                    self.vector_store.add_company_vector(link, semantic_text, metadata)
+                    self.vector_store.add_company_vector(final_url, semantic_text, metadata)
 
     def _extract_company_info(self, text: str, url: str) -> Optional[Dict[str, Any]]:
         """

@@ -476,7 +476,19 @@ with tab4:
                 with st.expander(f"**{m['name']}** - {m.get('industry', 'N/A')} ({m.get('country', 'N/A')})"):
                     st.write(f"**Begründung:** {m.get('justification', 'Keine Begründung vorhanden.')}")
                     st.write(f"**Zusammenfassung:** {m['summary']}")
-                    st.write(f"**Typ:** {m.get('org_type', 'N/A')}")
+
+                    st.divider()
+                    col_info1, col_info2 = st.columns(2)
+                    with col_info1:
+                        url = m.get('url', 'N/A')
+                        if url != 'N/A':
+                            st.write(f"**Webseite:** [{url}]({url})")
+                        else:
+                            st.write("**Webseite:** N/A")
+                        st.write(f"**Typ:** {m.get('org_type', 'N/A')}")
+                    with col_info2:
+                        st.write(f"**Mitarbeiter:** {m.get('employees_count', 'N/A')}")
+                        st.write(f"**KMU Status:** {'Ja' if m.get('kmu_status') else 'Nein'}")
 
         if st.session_state.get(f"topics_{call_name}"):
             st.write("### Suggested Topics:")
@@ -534,18 +546,28 @@ with tab5:
         li_service = LinkedInService(llm_service, li_username, li_password)
         if st.button("Fetch and Match Contacts"):
             if "last_call" in st.session_state:
-                with st.spinner("Fetching contacts and matching..."):
-                    contacts = li_service.get_first_degree_contacts()
+                with st.status("LinkedIn processing...") as status:
+                    contacts = li_service.get_first_degree_contacts(status_callback=lambda msg: status.update(label=msg))
                     if contacts:
-                        matches = li_service.find_matching_contacts_for_call(contacts, st.session_state.last_call)
-                        st.write(f"Matched {len(matches)} contacts:")
-                        for contact in matches:
-                            c_name = f"{contact.get('firstName')} {contact.get('lastName')}"
-                            st.write(f"**{c_name}** - {contact.get('occupation')}")
-                            if st.button(f"Generate Message for {contact.get('firstName')}", key=contact.get('public_id')):
-                                msg = li_service.generate_outreach_message(c_name, "his/her company", st.session_state.last_call)
-                                st.text_area("Message:", value=msg, height=200)
+                        matches = li_service.find_matching_contacts_for_call(
+                            contacts,
+                            st.session_state.last_call,
+                            status_callback=lambda msg: status.update(label=msg)
+                        )
+                        if matches:
+                            status.update(label=f"Matched {len(matches)} contacts!", state="complete")
+                            st.write(f"Matched {len(matches)} contacts:")
+                            for contact in matches:
+                                c_name = f"{contact.get('firstName')} {contact.get('lastName')}"
+                                st.write(f"**{c_name}** - {contact.get('occupation')}")
+                                if st.button(f"Generate Message for {contact.get('firstName')}", key=contact.get('public_id')):
+                                    msg = li_service.generate_outreach_message(c_name, "his/her company", st.session_state.last_call)
+                                    st.text_area("Message:", value=msg, height=200)
+                        else:
+                            status.update(label="No matches found.", state="error")
+                            st.info("No matching LinkedIn contacts found for this call.")
                     else:
+                        status.update(label="No contacts found.", state="error")
                         st.info("No LinkedIn contacts found. Check your credentials.")
             else:
                 st.warning("Please analyze a research call in the first tab first.")
@@ -584,11 +606,13 @@ with tab6:
             data,
             width="stretch",
             num_rows="dynamic",
-            key="db_editor"
+            key="db_editor",
+            on_change=None # We'll check the session state instead
         )
 
-        if st.button("Speichern"):
-            # Prepare data for update
+        # Check for changes in data_editor and auto-save
+        if st.session_state.db_editor.get("edited_rows") or st.session_state.db_editor.get("added_rows") or st.session_state.db_editor.get("deleted_rows"):
+            # Prepare data for update from the current state of edited_data
             update_list = []
             for row in edited_data:
                 update_list.append({
@@ -608,10 +632,11 @@ with tab6:
 
             try:
                 st.session_state.db_manager.update_companies(update_list)
-                st.success("Änderungen gespeichert!")
-                st.rerun()
+                # Clear changes to avoid infinite loop or duplicate saves if rerun is called elsewhere
+                # but streamlit handles this usually. To be safe, we just show a message.
+                st.toast("Änderungen automatisch gespeichert!")
             except Exception as e:
-                st.error(f"Fehler beim Speichern: {e}")
+                st.error(f"Fehler beim automatischen Speichern: {e}")
 
         # Detailed view in expanders
         st.subheader("Detailed Organization Profiles")
