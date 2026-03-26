@@ -71,14 +71,53 @@ class MatchingService:
     def search_internet_for_companies(self, topic: str) -> List[Dict[str, str]]:
         """
         Searches the internet for companies matching the given topic.
+        Uses the LLM to generate optimized search queries.
         """
-        companies = []
+        # Step 1: Generate optimized search queries using LLM
+        query_prompt = f"""
+        Generate 3 diverse and highly specific search queries in German and English to find official company websites related to the following topic: "{topic}".
+        The goal is to find actual company homepages, not news articles or lists.
+        Focus on German companies if the topic implies a German context.
+
+        Example for "AI in machinery":
+        1. "Maschinenbau Unternehmen Künstliche Intelligenz Webseite"
+        2. "AI solutions for mechanical engineering companies Germany official site"
+        3. "Innovative Firmen KI Automatisierung Maschinenbau"
+
+        Return only the 3 queries, one per line.
+        """
+        messages = [
+            {"role": "system", "content": "You are an expert at information retrieval and search engine optimization."},
+            {"role": "user", "content": query_prompt}
+        ]
+
+        try:
+            llm_response = self.llm_service.chat_completion(messages)
+            queries = [q.strip("- ").strip("123. ") for q in llm_response.splitlines() if q.strip()]
+            # Ensure we have at least the original topic if LLM fails
+            if not queries:
+                queries = [topic]
+        except Exception as e:
+            print(f"Error generating search queries: {e}")
+            queries = [topic]
+
+        # Step 2: Execute searches and collect results
+        companies = {} # Use dict to deduplicate by URL
         with DDGS() as ddgs:
-            results = ddgs.text(f"Companies working on {topic}", max_results=10)
-            for r in results:
-                companies.append({
-                    "name": r.get("title"),
-                    "url": r.get("href"),
-                    "snippet": r.get("body")
-                })
-        return companies
+            for query in queries:
+                try:
+                    # We add "site:.de OR site:.com" or similar intent implicitly via LLM queries
+                    results = ddgs.text(query, max_results=5)
+                    for r in results:
+                        url = r.get("href")
+                        if url and url not in companies:
+                            companies[url] = {
+                                "name": r.get("title"),
+                                "url": url,
+                                "snippet": r.get("body")
+                            }
+                except Exception as e:
+                    print(f"Search failed for query '{query}': {e}")
+                    continue
+
+        return list(companies.values())
