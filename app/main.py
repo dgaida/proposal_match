@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import urllib.parse
 from dotenv import load_dotenv
 from app.services.llm_service import LLMService
 from app.services.scraper_service import ScraperService
@@ -29,7 +30,12 @@ def get_llm_service():
     env_provider = os.getenv("LLM_PROVIDER", "openai").lower()
     default_index = providers.index(env_provider) if env_provider in providers else 0
 
-    provider = st.sidebar.selectbox("LLM Provider", providers, index=default_index)
+    provider = st.sidebar.selectbox(
+        "LLM Provider",
+        providers,
+        index=default_index,
+        help="Select the LLM provider you want to use for analysis and matching."
+    )
 
     # Get default API key based on provider
     default_api_key = ""
@@ -40,8 +46,18 @@ def get_llm_service():
     elif provider == "gemini":
         default_api_key = os.getenv("GEMINI_API_KEY", "")
 
-    api_key = st.sidebar.text_input(f"{provider.capitalize()} API Key", value=default_api_key, type="password")
-    model = st.sidebar.text_input("Model (Optional)", value=os.getenv("LLM_MODEL", ""))
+    api_key = st.sidebar.text_input(
+        f"{provider.capitalize()} API Key",
+        value=default_api_key,
+        type="password",
+        help=f"Enter your {provider.capitalize()} API key."
+    )
+    model = st.sidebar.text_input(
+        "Model (Optional)",
+        value=os.getenv("LLM_MODEL", ""),
+        placeholder="e.g. gpt-4o, llama3-70b-8192",
+        help="Specify a custom model name if supported by the provider."
+    )
 
     if api_key or provider == "ollama":
         return LLMService(provider=provider, api_key=api_key, llm_model=model if model else None)
@@ -51,10 +67,30 @@ llm_service = get_llm_service()
 
 # Sidebar - Settings
 st.sidebar.title("Settings")
-fit_username = st.sidebar.text_input("FIT Username", value=os.getenv("FIT_USERNAME", ""))
-fit_password = st.sidebar.text_input("FIT Password", value=os.getenv("FIT_PASSWORD", ""), type="password")
-li_username = st.sidebar.text_input("LinkedIn Username", value=os.getenv("LINKEDIN_USERNAME", ""))
-li_password = st.sidebar.text_input("LinkedIn Password", value=os.getenv("LINKEDIN_PASSWORD", ""), type="password")
+fit_username = st.sidebar.text_input(
+    "FIT Username",
+    value=os.getenv("FIT_USERNAME", ""),
+    placeholder="your.email@uni-kassel.de",
+    help="Your FIT Uni Kassel username (usually email)."
+)
+fit_password = st.sidebar.text_input(
+    "FIT Password",
+    value=os.getenv("FIT_PASSWORD", ""),
+    type="password",
+    help="Your FIT Uni Kassel password."
+)
+li_username = st.sidebar.text_input(
+    "LinkedIn Username",
+    value=os.getenv("LINKEDIN_USERNAME", ""),
+    placeholder="your.email@example.com",
+    help="Your LinkedIn login email."
+)
+li_password = st.sidebar.text_input(
+    "LinkedIn Password",
+    value=os.getenv("LINKEDIN_PASSWORD", ""),
+    type="password",
+    help="Your LinkedIn password."
+)
 
 # Main Header
 st.title("Funding Research and Collaboration App")
@@ -75,27 +111,91 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 # Feature 1: Call Summarization
 with tab1:
     st.header("Research Call Analysis")
-    call_url = st.text_input("Enter Research Call URL")
+    call_url = st.text_input(
+        "Enter Research Call URL",
+        key="call_url_input",
+        placeholder="https://example.com/research-funding-call",
+        help="Paste the URL of a research funding call to analyze its content."
+    )
     if st.button("Analyze Call"):
         scraper = ScraperService()
         analyzer = AnalyzerService(llm_service)
         with st.spinner("Fetching and analyzing..."):
             text = scraper.fetch_page_content(call_url)
             if text:
-                result = analyzer.analyze_research_call(text)
+                result = analyzer.analyze_research_call(text, url=call_url)
                 if result:
                     st.success("Analysis Complete!")
-                    st.json(result)
-                    st.session_state.last_call = result # Store for matching
+                    st.session_state.last_call = result # Store for matching and persistence
                 else:
                     st.error("Failed to analyze the call.")
             else:
                 st.error("Failed to fetch the URL content.")
 
+    if "last_call" in st.session_state:
+        result = st.session_state.last_call
+        st.subheader(f"Analysis: {result.get('Thema', 'N/A')}")
+
+        # Display as Markdown
+        st.markdown(result.get("Beschreibung", "No description available."))
+
+        st.write("### Metadata")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write(f"**Thema:** {result.get('Thema')}")
+            st.write(f"**Zielsetzung:** {result.get('Zielsetzung')}")
+            st.write(f"**Deadline:** {result.get('Deadline')}")
+            st.write(f"**Link:** {result.get('Link')}")
+        with col2:
+            st.write(f"**Budget:** {result.get('Budget')}")
+            st.write(f"**Laufzeit:** {result.get('Laufzeit')}")
+            st.write(f"**Prozess:** {result.get('Einstufig_Zweistufig')}")
+            st.write(f"**Partner:** {result.get('Anzahl_Projektpartner')}")
+
+        if result.get("Andere_Metadaten"):
+            st.write(f"**Andere Metadaten:** {result.get('Andere_Metadaten')}")
+
+        # Tools: Copy and Email
+        st.divider()
+        st.write("### Tools")
+
+        # Build the summary text for copy/email
+        summary_text = f"""Zusammenfassung der Ausschreibung: {result.get('Thema')}
+Link: {result.get('Link')}
+
+{result.get('Beschreibung')}
+
+### Metadaten
+- Thema: {result.get('Thema')}
+- Zielsetzung: {result.get('Zielsetzung')}
+- Deadline: {result.get('Deadline')}
+- Budget: {result.get('Budget')}
+- Laufzeit: {result.get('Laufzeit')}
+- Prozess: {result.get('Einstufig_Zweistufig')}
+- Partner: {result.get('Anzahl_Projektpartner')}
+"""
+        st.subheader("Kopieren")
+        st.code(summary_text, language="markdown")
+
+        st.subheader("Versenden")
+
+        # Email Template
+        email_body = f"Hallo ...,\n\nich habe die Ausschreibung \"{result.get('Thema')}\" analysieren lassen. Hier ist die Zusammenfassung:\n\n{summary_text}"
+
+        # Create mailto link
+        subject = f"Zusammenfassung der Ausschreibung: {result.get('Thema')}"
+        mailto_link = f"mailto:?subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(email_body)}"
+
+        st.markdown(f'<a href="{mailto_link}" target="_blank" style="text-decoration: none;"><button style="background-color: #f63366; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer;">📧 Als Mail senden</button></a>', unsafe_allow_html=True)
+
 # Feature 2: FIT Search
 with tab2:
     st.header("FIT Uni Kassel Search")
-    fit_query = st.text_input("Search for calls on FIT")
+    fit_query = st.text_input(
+        "Search for calls on FIT",
+        placeholder="Künstliche Intelligenz",
+        help="Enter search terms to find research calls in the FIT database."
+    )
     if st.button("Search FIT"):
         if fit_username and fit_password:
             fit_service = FITService(llm_service)
@@ -119,8 +219,16 @@ with tab2:
 with tab3:
     st.header("Company Website Indexing")
     st.write("Upload a file with company hyperlinks (one per line) or enter them manually.")
-    company_links_input = st.text_area("Enter Company Links (one per line)")
-    uploaded_file = st.file_uploader("Or upload a text file with links", type=["txt"])
+    company_links_input = st.text_area(
+        "Enter Company Links (one per line)",
+        placeholder="https://company-a.com\nhttps://company-b.de",
+        help="Enter one or more company website URLs to index."
+    )
+    uploaded_file = st.file_uploader(
+        "Or upload a text file with links",
+        type=["txt"],
+        help="Upload a plain text file containing one URL per line."
+    )
 
     if st.button("Index Companies"):
         links = []
@@ -140,6 +248,23 @@ with tab3:
             st.success("Indexing Complete!")
         else:
             st.warning("Please provide links to index.")
+
+    st.divider()
+    st.write("### Recursive Folder Indexing")
+    folder_path = st.text_input(
+        "Enter Folder Path containing .url files",
+        placeholder="/path/to/your/links/folder",
+        help="Provide a local folder path to recursively search for and index .url files."
+    )
+    if st.button("Index from Folder"):
+        if folder_path and os.path.exists(folder_path):
+            indexer = IndexingService(llm_service, st.session_state.db_manager, st.session_state.vector_store)
+            with st.status(f"Scanning {folder_path}...") as status:
+                indexed = indexer.index_from_folder(folder_path)
+                status.update(label=f"Indexed {len(indexed)} URLs from folder.", state="complete")
+            st.success(f"Successfully indexed {len(indexed)} companies from folder.")
+        else:
+            st.error("Invalid or empty folder path.")
 
 # Feature 4: Hybrid Search and Matching
 with tab4:
@@ -173,8 +298,16 @@ with tab4:
 
     # Manual Search Section
     st.subheader("Manual Hybrid Search")
-    search_query = st.text_input("Enter search query (e.g. 'AI and Robotics')")
-    state_filter = st.text_input("State Filter (Optional)")
+    search_query = st.text_input(
+        "Enter search query (e.g. 'AI and Robotics')",
+        placeholder="Machine Learning in Health",
+        help="Search for companies in your database using semantic and keyword matching."
+    )
+    state_filter = st.text_input(
+        "State Filter (Optional)",
+        placeholder="Hessen",
+        help="Filter results by German federal state (e.g., Hessen, Bayern)."
+    )
     if st.button("Search Database"):
         matcher = MatchingService(llm_service, st.session_state.db_manager, st.session_state.vector_store)
         filters = {"state": state_filter} if state_filter else None
@@ -185,7 +318,11 @@ with tab4:
 
     # Internet Discovery Section
     st.subheader("Discover New Companies on the Internet")
-    internet_topic = st.text_input("Topic for internet search")
+    internet_topic = st.text_input(
+        "Topic for internet search",
+        placeholder="Innovative startups in robotics Germany",
+        help="Search the web for new companies matching this topic."
+    )
     if st.button("Search Internet"):
         matcher = MatchingService(llm_service, st.session_state.db_manager, st.session_state.vector_store)
         with st.spinner("Searching the web..."):
