@@ -15,6 +15,8 @@ class Company(Base):
     employees_count = Column(Integer)
     kmu_status = Column(Boolean)
     industry = Column(String(255))
+    country = Column(String(100))
+    org_type = Column(String(100))
     research_active = Column(Boolean)
     summary = Column(Text)
     products = Column(Text)
@@ -52,3 +54,24 @@ class DBManager:
         companies = session.query(Company).all()
         session.close()
         return companies
+
+    def update_companies(self, updated_data: List[Dict[str, Any]]):
+        """
+        Batch updates companies in the database.
+        """
+        session = self.Session()
+        try:
+            for data in updated_data:
+                # Assuming 'url' is the unique identifier for merging
+                if 'url' in data:
+                    company = session.query(Company).filter(Company.url == data['url']).first()
+                    if company:
+                        for key, value in data.items():
+                            if hasattr(company, key):
+                                setattr(company, key, value)
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()

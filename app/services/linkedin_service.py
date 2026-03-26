@@ -21,9 +21,8 @@ class LinkedInService:
             return []
 
         try:
-            # Note: The linkedin_api library has various methods to fetch connections.
-            # Using get_connections() for 1st-degree contacts.
-            connections = self.api.get_connections()
+            # Using search_people with network_depths=['F'] for 1st-degree contacts.
+            connections = self.api.search_people(network_depths=['F'])
             return connections
         except Exception as e:
             print(f"Error fetching LinkedIn contacts: {e}")
