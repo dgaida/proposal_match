@@ -27,7 +27,26 @@ class DBManager:
         os.makedirs("data", exist_ok=True)
         self.engine = create_engine(db_url)
         Base.metadata.create_all(self.engine)
+        self._ensure_columns_exist()
         self.Session = sessionmaker(bind=self.engine)
+
+    def _ensure_columns_exist(self):
+        """
+        Ensures that all columns defined in the model exist in the database.
+        This handles migrations for existing databases.
+        """
+        from sqlalchemy import inspect, text
+        inspector = inspect(self.engine)
+        if 'companies' in inspector.get_table_names():
+            columns = [c['name'] for c in inspector.get_columns('companies')]
+
+            with self.engine.connect() as conn:
+                if 'country' not in columns:
+                    conn.execute(text("ALTER TABLE companies ADD COLUMN country VARCHAR(100)"))
+                    conn.commit()
+                if 'org_type' not in columns:
+                    conn.execute(text("ALTER TABLE companies ADD COLUMN org_type VARCHAR(100)"))
+                    conn.commit()
 
     def add_company(self, company_data: Dict[str, Any]):
         """
