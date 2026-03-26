@@ -476,7 +476,19 @@ with tab4:
                 with st.expander(f"**{m['name']}** - {m.get('industry', 'N/A')} ({m.get('country', 'N/A')})"):
                     st.write(f"**Begründung:** {m.get('justification', 'Keine Begründung vorhanden.')}")
                     st.write(f"**Zusammenfassung:** {m['summary']}")
-                    st.write(f"**Typ:** {m.get('org_type', 'N/A')}")
+
+                    st.divider()
+                    col_info1, col_info2 = st.columns(2)
+                    with col_info1:
+                        url = m.get('url', 'N/A')
+                        if url != 'N/A':
+                            st.write(f"**Webseite:** [{url}]({url})")
+                        else:
+                            st.write("**Webseite:** N/A")
+                        st.write(f"**Typ:** {m.get('org_type', 'N/A')}")
+                    with col_info2:
+                        st.write(f"**Mitarbeiter:** {m.get('employees_count', 'N/A')}")
+                        st.write(f"**KMU Status:** {'Ja' if m.get('kmu_status') else 'Nein'}")
 
         if st.session_state.get(f"topics_{call_name}"):
             st.write("### Suggested Topics:")
