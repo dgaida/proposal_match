@@ -19,6 +19,7 @@ class AnalyzerService:
         - Anzahl_Projektpartner: Required or suggested number of project partners.
         - Budget: Estimated or maximum budget for the call.
         - Laufzeit: The duration of the projects.
+        - Antragsberechtigt: Who is eligible to apply? (e.g., Hochschulen, Unternehmen, KMUs, große Unternehmen, Forschungseinrichtungen, Kommunen, Verbände).
         - Andere_Metadaten: Any other relevant information.
         - Link: The URL to the research call. {f'Use {url}' if url else 'Extract from text if available.'}
         - Beschreibung: A detailed textual description of the call in German, including the most important contents, research goals, etc., formatted in Markdown.

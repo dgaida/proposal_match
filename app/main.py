@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import json
 import urllib.parse
 from dotenv import load_dotenv
 from app.services.llm_service import LLMService
@@ -23,6 +24,15 @@ if "db_manager" not in st.session_state:
     st.session_state.db_manager = DBManager()
 if "vector_store" not in st.session_state:
     st.session_state.vector_store = VectorStore()
+
+# Load User Skills/Context
+if "user_context" not in st.session_state:
+    user_skill_path = "user_skill.md"
+    if os.path.exists(user_skill_path):
+        with open(user_skill_path, "r", encoding="utf-8") as f:
+            st.session_state.user_context = f.read()
+    else:
+        st.session_state.user_context = ""
 
 # LLM Service Initialization
 def get_llm_service():
@@ -109,6 +119,18 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Database View"
 ])
 
+# Initialize FIT cache in session state
+if "fit_results" not in st.session_state:
+    fit_cache_path = "data/fit_cache.json"
+    if os.path.exists(fit_cache_path):
+        try:
+            with open(fit_cache_path, "r", encoding="utf-8") as f:
+                st.session_state.fit_results = json.load(f)
+        except Exception:
+            st.session_state.fit_results = None
+    else:
+        st.session_state.fit_results = None
+
 # Feature 1: Call Summarization
 with tab1:
     st.header("Research Call Analysis")
@@ -163,6 +185,8 @@ with tab1:
             st.write(f"**Prozess:** {result.get('Einstufig_Zweistufig')}")
             st.write(f"**Partner:** {result.get('Anzahl_Projektpartner')}")
 
+        st.write(f"**Antragsberechtigt:** {result.get('Antragsberechtigt', 'N/A')}")
+
         if result.get("Andere_Metadaten"):
             st.write(f"**Andere Metadaten:** {result.get('Andere_Metadaten')}")
 
@@ -184,8 +208,33 @@ Link: {result.get('Link')}
 - Laufzeit: {result.get('Laufzeit')}
 - Prozess: {result.get('Einstufig_Zweistufig')}
 - Partner: {result.get('Anzahl_Projektpartner')}
+- Antragsberechtigt: {result.get('Antragsberechtigt')}
 """
-        st.subheader("Kopieren")
+        st.subheader("Speichern & Kopieren")
+
+        # Save functionality
+        summaries_dir = "data/summaries"
+        os.makedirs(summaries_dir, exist_ok=True)
+
+        if st.button("Speichern", help="Speichert diese Zusammenfassung als .md Datei"):
+            filename = f"{result.get('Thema', 'summary')[:50]}.md".replace(" ", "_").replace("/", "_")
+            filepath = os.path.join(summaries_dir, filename)
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(summary_text)
+            st.success(f"Gespeichert als {filename}")
+
+        # Load functionality
+        saved_files = [f for f in os.listdir(summaries_dir) if f.endswith(".md")]
+        if saved_files:
+            st.divider()
+            selected_file = st.selectbox("Gespeicherte Zusammenfassungen", saved_files)
+            if st.button("Laden"):
+                with open(os.path.join(summaries_dir, selected_file), "r", encoding="utf-8") as f:
+                    loaded_content = f.read()
+                    st.info(f"Inhalt von {selected_file}:")
+                    st.markdown(loaded_content)
+
+        st.divider()
         st.code(summary_text, language="markdown")
 
         st.subheader("Versenden")
@@ -210,21 +259,39 @@ with tab2:
     if st.button("Search FIT"):
         if fit_username and fit_password:
             fit_service = FITService(llm_service)
-            with st.spinner("Logging in and searching..."):
-                if fit_service.login(fit_username, fit_password):
-                    results = fit_service.search_calls(fit_query)
-                    st.write(f"Found {len(results)} results.")
-                    for r in results:
-                        with st.expander(r.get("title") or r.get("englishTitle")):
-                            st.write(r.get("description") or r.get("shortDescription"))
+            with st.status("Initializing FIT Search...") as status:
+                if fit_service.login(fit_username, fit_password, status_callback=lambda msg: status.update(label=msg)):
+                    results = fit_service.search_calls(fit_query, status_callback=lambda msg: status.update(label=msg))
+                    summary = fit_service.summarize_results(results, status_callback=lambda msg: status.update(label=msg))
 
-                    st.subheader("Summary of Results")
-                    summary = fit_service.summarize_results(results)
-                    st.write(summary)
+                    st.session_state.fit_results = {
+                        "results": results,
+                        "summary": summary
+                    }
+
+                    # Auto-save to cache
+                    os.makedirs("data", exist_ok=True)
+                    with open("data/fit_cache.json", "w", encoding="utf-8") as f:
+                        json.dump(st.session_state.fit_results, f, ensure_ascii=False, indent=4)
+
+                    status.update(label="Search and Analysis Complete!", state="complete")
                 else:
+                    status.update(label="Login to FIT failed.", state="error")
                     st.error("Login to FIT failed.")
         else:
             st.warning("Please provide FIT credentials in the sidebar.")
+
+    if st.session_state.fit_results:
+        results = st.session_state.fit_results.get("results", [])
+        summary = st.session_state.fit_results.get("summary", "")
+
+        st.write(f"Found {len(results)} results.")
+        for r in results:
+            with st.expander(r.get("title") or r.get("englishTitle")):
+                st.write(r.get("description") or r.get("shortDescription"))
+
+        st.subheader("Summary of Results")
+        st.write(summary)
 
 # Feature 3: Company Indexing
 with tab3:
@@ -271,7 +338,7 @@ with tab3:
         if folder_path and os.path.exists(folder_path):
             indexer = IndexingService(llm_service, st.session_state.db_manager, st.session_state.vector_store)
             with st.status(f"Scanning {folder_path}...") as status:
-                indexed = indexer.index_from_folder(folder_path)
+                indexed = indexer.index_from_folder(folder_path, status_callback=lambda msg: status.update(label=msg))
                 status.update(label=f"Indexed {len(indexed)} URLs from folder.", state="complete")
             st.success(f"Successfully indexed {len(indexed)} companies from folder.")
             if indexed:
@@ -304,10 +371,19 @@ with tab4:
                     st.write("No matching companies found in database.")
 
         if st.button("Suggest Research Topics"):
-            topics = matcher.suggest_research_topics(st.session_state.last_call)
-            st.write("Suggested Topics:")
-            for t in topics:
-                st.write(f"- {t}")
+            # Fetch some matching companies first to provide context
+            query = f"Company working on {st.session_state.last_call.get('Thema')} and {st.session_state.last_call.get('Zielsetzung')}"
+            matched_companies = matcher.hybrid_search(query)
+
+            with st.spinner("Generating research topic suggestions..."):
+                topics = matcher.suggest_research_topics(
+                    st.session_state.last_call,
+                    user_context=st.session_state.get("user_context", ""),
+                    matched_companies=matched_companies
+                )
+                st.write("### Suggested Topics:")
+                for t in topics:
+                    st.markdown(t)
 
         st.divider()
 
@@ -403,7 +479,7 @@ with tab6:
                 "Summary": c.summary
             })
 
-        st.dataframe(data, use_container_width=True)
+        st.dataframe(data, width="stretch")
 
         # Detailed view in expanders
         st.subheader("Detailed Company Profiles")

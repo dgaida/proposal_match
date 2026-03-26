@@ -1,6 +1,6 @@
 import httpx
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Callable
 from app.services.llm_service import LLMService
 
 class FITService:
@@ -10,10 +10,12 @@ class FITService:
         self.auth_url = "https://fit.uni-kassel.de/auth"
         self.client = httpx.Client(timeout=30)
 
-    def login(self, username: str, password: str) -> bool:
+    def login(self, username: str, password: str, status_callback: Optional[Callable[[str], None]] = None) -> bool:
         """
         Authenticates with Keycloak to get a bearer token.
         """
+        if status_callback:
+            status_callback("Logging in to FIT Uni Kassel...")
         data = {
             "grant_type": "password",
             "client_id": "web",
@@ -35,10 +37,12 @@ class FITService:
             print(f"Error during login: {e}")
             return False
 
-    def search_calls(self, query: str) -> List[Dict[str, Any]]:
+    def search_calls(self, query: str, status_callback: Optional[Callable[[str], None]] = None) -> List[Dict[str, Any]]:
         """
         Searches for calls in the FIT database and filters for relevance using LLM.
         """
+        if status_callback:
+            status_callback(f"Searching for '{query}' on FIT...")
         params = {
             "search": query,
             "pageSize": 20, # Fetch more to allow for filtering
@@ -55,6 +59,8 @@ class FITService:
                 return []
 
             # Post-filtering using LLM for relevance
+            if status_callback:
+                status_callback(f"Filtering {len(docs)} results for relevance...")
             return self._filter_relevant_calls(docs, query)
         except Exception as e:
             print(f"Error searching FIT: {e}")
@@ -103,12 +109,15 @@ class FITService:
             print(f"Error filtering FIT calls: {e}")
             return docs[:10]
 
-    def summarize_results(self, results: List[Dict[str, Any]]) -> str:
+    def summarize_results(self, results: List[Dict[str, Any]], status_callback: Optional[Callable[[str], None]] = None) -> str:
         """
         Summarizes the search results using the LLM.
         """
+        if status_callback:
+            status_callback("Summarizing results in German...")
+
         if not results:
-            return "No relevant results found."
+            return "Keine relevanten Ergebnisse gefunden."
 
         formatted_results = "\n\n".join([
             f"Title: {r.get('title') or r.get('englishTitle')}\nDescription: {r.get('shortDescription') or r.get('description')}"
@@ -117,8 +126,9 @@ class FITService:
 
         prompt = f"""
         Below are search results from a research funding database.
-        Summarize the most relevant calls for the user's interest.
+        Summarize the most relevant calls for the user's interest in GERMAN.
         Highlight key data like topic, deadline, and eligibility.
+        The summary must be in German.
 
         Results:
         {formatted_results}
