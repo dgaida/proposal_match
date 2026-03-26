@@ -50,20 +50,42 @@ class DBManager:
 
     def add_company(self, company_data: Dict[str, Any]):
         """
-        Adds a new company to the database.
+        Adds a new company to the database or updates it if the URL already exists.
         """
         session = self.Session()
         company_data_copy = company_data.copy()
+
+        # Normalize URL: strip trailing slash
+        if 'url' in company_data_copy:
+            company_data_copy['url'] = company_data_copy['url'].rstrip('/')
+
         if company_data_copy.get('employees_count') and not isinstance(company_data_copy['employees_count'], int):
             try:
                 company_data_copy['employees_count'] = int(company_data_copy['employees_count'])
             except (ValueError, TypeError):
                 company_data_copy['employees_count'] = None
 
-        company = Company(**company_data_copy)
-        session.merge(company)
-        session.commit()
-        session.close()
+        try:
+            # Check if company with this URL already exists to avoid IntegrityError even with session.merge
+            # as unique constraints on String(255) might behave differently with merge in some SQLite versions
+            existing = None
+            if 'url' in company_data_copy:
+                existing = session.query(Company).filter(Company.url == company_data_copy['url']).first()
+
+            if existing:
+                for key, value in company_data_copy.items():
+                    if hasattr(existing, key):
+                        setattr(existing, key, value)
+            else:
+                company = Company(**company_data_copy)
+                session.add(company)
+
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
 
     def get_all_companies(self) -> List[Company]:
         """
@@ -83,7 +105,8 @@ class DBManager:
             for data in updated_data:
                 # Assuming 'url' is the unique identifier for merging
                 if 'url' in data:
-                    company = session.query(Company).filter(Company.url == data['url']).first()
+                    url = data['url'].rstrip('/')
+                    company = session.query(Company).filter(Company.url == url).first()
                     if company:
                         for key, value in data.items():
                             if hasattr(company, key):

@@ -97,7 +97,7 @@ class IndexingService:
             return indexed_urls
 
         # Get all existing URLs in the database to avoid re-indexing
-        existing_urls = {c.url for c in self.db_manager.get_all_companies()}
+        existing_urls = {c.url.rstrip('/') for c in self.db_manager.get_all_companies()}
         processed_in_this_run = set()
 
         for root, _, files in os.walk(folder_path):
@@ -106,7 +106,8 @@ class IndexingService:
                     file_path = os.path.join(root, file)
                     url = self._extract_url_from_file(file_path)
                     if url:
-                        if url in existing_urls or url in processed_in_this_run:
+                        normalized_url = url.rstrip('/')
+                        if normalized_url in existing_urls or normalized_url in processed_in_this_run:
                             if status_callback:
                                 status_callback(f"Skipping already indexed or duplicate URL: {url}")
                             continue
