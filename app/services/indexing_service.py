@@ -28,6 +28,10 @@ class IndexingService:
                 content = scraper_result["text"]
                 final_url = scraper_result["final_url"]
 
+                # Check if final URL is already indexed
+                if self.db_manager.is_url_indexed(final_url):
+                    continue
+
                 extracted_data = self._extract_company_info(content, final_url)
                 if extracted_data:
                     # Split metadata and semantic info for storage

@@ -15,6 +15,7 @@ def test_indexing_service():
 
     # Mock LLM response
     mock_llm_service.extract_structured_data.return_value = '{"Name": "Test Company", "Bundesland": "NRW", "Zusammenfassung": "A test company summary."}'
+    mock_db_manager.is_url_indexed.return_value = False
 
     with patch("app.services.scraper_service.ScraperService.fetch_page_content") as mock_fetch:
         mock_fetch.return_value = {

@@ -578,15 +578,38 @@ with tab5:
 with tab6:
     st.header("Indexed Companies Database")
     if st.button("Refresh Database View"):
+        removed = st.session_state.db_manager.deduplicate_companies()
+        if removed > 0:
+            st.success(f"{removed} Duplikate wurden entfernt.")
+        else:
+            st.info("Keine Duplikate gefunden.")
         st.rerun()
 
     companies = st.session_state.db_manager.get_all_companies()
     if companies:
-        st.write(f"Total indexed companies: {len(companies)}")
+        # Filtering logic
+        st.subheader("Filter & Suche")
+        col_f1, col_f2, col_f3 = st.columns(3)
+        with col_f1:
+            name_filter = st.text_input("Name suchen", placeholder="Unternehmen A")
+        with col_f2:
+            countries = sorted(list({c.country for c in companies if c.country}))
+            country_filter = st.selectbox("Land filtern", ["Alle"] + countries)
+        with col_f3:
+            states = sorted(list({c.state for c in companies if c.state}))
+            state_filter = st.selectbox("Bundesland filtern", ["Alle"] + states)
 
         # Convert to list of dicts for dataframe
         data = []
         for c in companies:
+            # Apply filters
+            if name_filter and name_filter.lower() not in (c.name or "").lower():
+                continue
+            if country_filter != "Alle" and c.country != country_filter:
+                continue
+            if state_filter != "Alle" and c.state != state_filter:
+                continue
+
             data.append({
                 "Name": c.name,
                 "URL": c.url,
@@ -601,6 +624,8 @@ with tab6:
                 "Summary": c.summary,
                 "Products": c.products
             })
+
+        st.write(f"Anzahl angezeigter Einträge: {len(data)}")
 
         edited_data = st.data_editor(
             data,

@@ -96,6 +96,54 @@ class DBManager:
         session.close()
         return companies
 
+    def deduplicate_companies(self):
+        """
+        Identifies and removes duplicate entries based on normalized URLs.
+        """
+        session = self.Session()
+        try:
+            # Get all companies
+            all_companies = session.query(Company).all()
+            seen_urls = {} # normalized_url -> id
+            to_delete = []
+
+            for company in all_companies:
+                norm_url = (company.url or "").rstrip('/')
+                if norm_url in seen_urls:
+                    # Duplicate found! Keep the one that might have more info (simple heuristic: higher ID if data is equal, or just the first seen)
+                    # For now, let's just delete the newer one
+                    to_delete.append(company.id)
+                else:
+                    seen_urls[norm_url] = company.id
+
+            if to_delete:
+                session.query(Company).filter(Company.id.in_(to_delete)).delete(synchronize_session=False)
+                session.commit()
+                return len(to_delete)
+            return 0
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
+
+    def is_url_indexed(self, url: str) -> bool:
+        """
+        Checks if a URL (or its normalized version) is already in the database.
+        """
+        if not url:
+            return False
+
+        norm_url = url.rstrip('/')
+        session = self.Session()
+        exists = session.query(Company).filter(Company.url.like(norm_url + "%")).first() is not None
+        # Better: check exactly for the normalized version or with slash
+        exists = session.query(Company).filter(
+            (Company.url == norm_url) | (Company.url == norm_url + '/')
+        ).first() is not None
+        session.close()
+        return exists
+
     def update_companies(self, updated_data: List[Dict[str, Any]]):
         """
         Batch updates companies in the database.
