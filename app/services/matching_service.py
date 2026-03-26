@@ -1,6 +1,6 @@
 import json
 from typing import List, Dict, Any, Optional
-from ddgs import DDGS
+from duckduckgo_search import DDGS
 from app.services.llm_service import LLMService
 from app.utils.db_manager import DBManager, Company
 from app.utils.vector_store import VectorStore
