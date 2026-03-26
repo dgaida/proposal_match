@@ -15,6 +15,8 @@ class Company(Base):
     employees_count = Column(Integer)
     kmu_status = Column(Boolean)
     industry = Column(String(255))
+    country = Column(String(100))
+    org_type = Column(String(100))
     research_active = Column(Boolean)
     summary = Column(Text)
     products = Column(Text)
@@ -25,24 +27,65 @@ class DBManager:
         os.makedirs("data", exist_ok=True)
         self.engine = create_engine(db_url)
         Base.metadata.create_all(self.engine)
+        self._ensure_columns_exist()
         self.Session = sessionmaker(bind=self.engine)
+
+    def _ensure_columns_exist(self):
+        """
+        Ensures that all columns defined in the model exist in the database.
+        This handles migrations for existing databases.
+        """
+        from sqlalchemy import inspect, text
+        inspector = inspect(self.engine)
+        if 'companies' in inspector.get_table_names():
+            columns = [c['name'] for c in inspector.get_columns('companies')]
+
+            with self.engine.connect() as conn:
+                if 'country' not in columns:
+                    conn.execute(text("ALTER TABLE companies ADD COLUMN country VARCHAR(100)"))
+                    conn.commit()
+                if 'org_type' not in columns:
+                    conn.execute(text("ALTER TABLE companies ADD COLUMN org_type VARCHAR(100)"))
+                    conn.commit()
 
     def add_company(self, company_data: Dict[str, Any]):
         """
-        Adds a new company to the database.
+        Adds a new company to the database or updates it if the URL already exists.
         """
         session = self.Session()
         company_data_copy = company_data.copy()
+
+        # Normalize URL: strip trailing slash
+        if 'url' in company_data_copy:
+            company_data_copy['url'] = company_data_copy['url'].rstrip('/')
+
         if company_data_copy.get('employees_count') and not isinstance(company_data_copy['employees_count'], int):
             try:
                 company_data_copy['employees_count'] = int(company_data_copy['employees_count'])
             except (ValueError, TypeError):
                 company_data_copy['employees_count'] = None
 
-        company = Company(**company_data_copy)
-        session.merge(company)
-        session.commit()
-        session.close()
+        try:
+            # Check if company with this URL already exists to avoid IntegrityError even with session.merge
+            # as unique constraints on String(255) might behave differently with merge in some SQLite versions
+            existing = None
+            if 'url' in company_data_copy:
+                existing = session.query(Company).filter(Company.url == company_data_copy['url']).first()
+
+            if existing:
+                for key, value in company_data_copy.items():
+                    if hasattr(existing, key):
+                        setattr(existing, key, value)
+            else:
+                company = Company(**company_data_copy)
+                session.add(company)
+
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
 
     def get_all_companies(self) -> List[Company]:
         """
@@ -52,3 +95,73 @@ class DBManager:
         companies = session.query(Company).all()
         session.close()
         return companies
+
+    def deduplicate_companies(self):
+        """
+        Identifies and removes duplicate entries based on normalized URLs.
+        """
+        session = self.Session()
+        try:
+            # Get all companies
+            all_companies = session.query(Company).all()
+            seen_urls = {} # normalized_url -> id
+            to_delete = []
+
+            for company in all_companies:
+                norm_url = (company.url or "").rstrip('/')
+                if norm_url in seen_urls:
+                    # Duplicate found! Keep the one that might have more info (simple heuristic: higher ID if data is equal, or just the first seen)
+                    # For now, let's just delete the newer one
+                    to_delete.append(company.id)
+                else:
+                    seen_urls[norm_url] = company.id
+
+            if to_delete:
+                session.query(Company).filter(Company.id.in_(to_delete)).delete(synchronize_session=False)
+                session.commit()
+                return len(to_delete)
+            return 0
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
+
+    def is_url_indexed(self, url: str) -> bool:
+        """
+        Checks if a URL (or its normalized version) is already in the database.
+        """
+        if not url:
+            return False
+
+        norm_url = url.rstrip('/')
+        session = self.Session()
+        exists = session.query(Company).filter(Company.url.like(norm_url + "%")).first() is not None
+        # Better: check exactly for the normalized version or with slash
+        exists = session.query(Company).filter(
+            (Company.url == norm_url) | (Company.url == norm_url + '/')
+        ).first() is not None
+        session.close()
+        return exists
+
+    def update_companies(self, updated_data: List[Dict[str, Any]]):
+        """
+        Batch updates companies in the database.
+        """
+        session = self.Session()
+        try:
+            for data in updated_data:
+                # Assuming 'url' is the unique identifier for merging
+                if 'url' in data:
+                    url = data['url'].rstrip('/')
+                    company = session.query(Company).filter(Company.url == url).first()
+                    if company:
+                        for key, value in data.items():
+                            if hasattr(company, key):
+                                setattr(company, key, value)
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()

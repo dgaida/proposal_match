@@ -6,14 +6,15 @@ class ScraperService:
     def __init__(self, timeout: int = 30):
         self.timeout = timeout
 
-    def fetch_page_content(self, url: str) -> Optional[str]:
+    def fetch_page_content(self, url: str) -> Optional[dict]:
         """
-        Fetches the content of a given URL and returns the text.
+        Fetches the content of a given URL and returns the text and final URL.
         """
         try:
-            with httpx.Client(timeout=self.timeout) as client:
+            with httpx.Client(timeout=self.timeout, follow_redirects=True) as client:
                 response = client.get(url)
                 response.raise_for_status()
+                final_url = str(response.url)
                 soup = BeautifulSoup(response.content, "html.parser")
 
                 # Extract text from relevant tags
@@ -27,7 +28,7 @@ class ScraperService:
                 chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
                 text = "\n".join(chunk for chunk in chunks if chunk)
 
-                return text
+                return {"text": text, "final_url": final_url}
         except Exception as e:
             print(f"Error fetching page content: {e}")
             return None
