@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Callable
 from app.services.scraper_service import ScraperService
 from app.services.llm_service import LLMService
 from app.utils.db_manager import DBManager
@@ -77,7 +77,7 @@ class IndexingService:
             print(f"Error extracting company info: {e}")
             return None
 
-    def index_from_folder(self, folder_path: str) -> List[str]:
+    def index_from_folder(self, folder_path: str, status_callback: Optional[Callable[[str], None]] = None) -> List[str]:
         """
         Recursively searches for .url files in the folder and indexes the URLs.
         """
@@ -85,16 +85,29 @@ class IndexingService:
         if not os.path.exists(folder_path):
             return indexed_urls
 
+        # Get all existing URLs in the database to avoid re-indexing
+        existing_urls = {c.url for c in self.db_manager.get_all_companies()}
+        processed_in_this_run = set()
+
         for root, _, files in os.walk(folder_path):
             for file in files:
                 if file.endswith(".url"):
                     file_path = os.path.join(root, file)
                     url = self._extract_url_from_file(file_path)
                     if url:
+                        if url in existing_urls or url in processed_in_this_run:
+                            if status_callback:
+                                status_callback(f"Skipping already indexed or duplicate URL: {url}")
+                            continue
+
+                        if status_callback:
+                            status_callback(f"Indexing company: {url} (found in {file})")
+
                         self.index_companies_from_links([url])
                         indexed_urls.append(url)
+                        processed_in_this_run.add(url)
 
-                if len(indexed_urls) >= 5:
+                if len(indexed_urls) >= 15:
                     return indexed_urls
         return indexed_urls
 

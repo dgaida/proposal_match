@@ -11,15 +11,31 @@ class MatchingService:
         self.db_manager = db_manager
         self.vector_store = vector_store
 
-    def suggest_research_topics(self, call_data: Dict[str, Any]) -> List[str]:
+    def suggest_research_topics(self, call_data: Dict[str, Any], user_context: str = "", matched_companies: List[Dict[str, Any]] = []) -> List[str]:
         """
-        Suggests potential research topics based on the call data.
+        Suggests potential research topics based on the call data, user context, and available companies.
         """
-        prompt = f"""
-        Given the following research call information, suggest 5 concrete research topics or project ideas.
-        Call Data: {json.dumps(call_data)}
+        companies_info = "\n".join([f"- {c['name']} (Industry: {c['industry']}): {c['summary']}" for c in matched_companies])
 
-        Return the topics as a list.
+        prompt = f"""
+        Given the following research call information and the user's profile, suggest 5 concrete research topics or project ideas.
+
+        User Profile:
+        {user_context}
+
+        Call Data:
+        {json.dumps(call_data)}
+
+        Available Companies from Database:
+        {companies_info}
+
+        For each suggested topic:
+        1. State the project idea.
+        2. Specifically highlight which company from the 'Available Companies' would fit well for this suggestion and describe their concrete role/contribution.
+        3. Identify which types of partners are still missing to form a complete consortium (e.g., SME in sensor technology, large industrial partner for testing, etc. - do not name specific companies, just the sectors/expertise).
+        4. Consider the user's profile to decide which role they/their institution already covers.
+
+        Return the topics as a list with the additional information for each.
         """
         messages = [
             {"role": "system", "content": "You are an expert in research and development strategy."},
