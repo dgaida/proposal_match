@@ -14,10 +14,12 @@ class IndexingService:
         self.vector_store = vector_store
         self.scraper_service = ScraperService()
 
-    def index_companies_from_links(self, links: List[str]):
+    def index_companies_from_links(self, links: List[str]) -> int:
         """
         Crawls the given links, extracts information, and stores it.
+        Returns the number of companies actually indexed.
         """
+        indexed_count = 0
         for link in links:
             # Normalize URL: change http:// to https://
             if link.startswith("http://"):
@@ -64,6 +66,8 @@ class IndexingService:
                     # Store in ChromaDB
                     semantic_text = f"Company: {metadata['name']}. {metadata['summary']} Products: {metadata['products']}"
                     self.vector_store.add_company_vector(final_url, semantic_text, metadata)
+                    indexed_count += 1
+        return indexed_count
 
     def _extract_company_info(self, text: str, url: str) -> Optional[Dict[str, Any]]:
         """
@@ -92,7 +96,7 @@ class IndexingService:
             print(f"Error extracting company info: {e}")
             return None
 
-    def index_from_folder(self, folder_path: str, status_callback: Optional[Callable[[str], None]] = None) -> List[str]:
+    def index_from_folder(self, folder_path: str, limit: int = 25, status_callback: Optional[Callable[[str], None]] = None) -> List[str]:
         """
         Recursively searches for .url files in the folder and indexes the URLs.
         """
@@ -119,11 +123,12 @@ class IndexingService:
                         if status_callback:
                             status_callback(f"Indexing company: {url} (found in {file})")
 
-                        self.index_companies_from_links([url])
-                        indexed_urls.append(url)
+                        newly_indexed = self.index_companies_from_links([url])
+                        if newly_indexed > 0:
+                            indexed_urls.append(url)
                         processed_in_this_run.add(url)
 
-                if len(indexed_urls) >= 15:
+                if len(indexed_urls) >= limit:
                     return indexed_urls
         return indexed_urls
 
