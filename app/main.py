@@ -131,6 +131,43 @@ if "fit_results" not in st.session_state:
     else:
         st.session_state.fit_results = None
 
+# Utility functions
+def parse_md_to_result(content):
+    """Parses metadata from .md summaries for matching service compatibility."""
+    result = {}
+    lines = content.split('\n')
+    for line in lines:
+        if line.startswith("Zusammenfassung der Ausschreibung: "):
+            result['Thema'] = line.replace("Zusammenfassung der Ausschreibung: ", "").strip()
+        elif line.startswith("Link: "):
+            result['Link'] = line.replace("Link: ", "").strip()
+        elif line.startswith("- Thema: "):
+            result['Thema'] = line.replace("- Thema: ", "").strip()
+        elif line.startswith("- Zielsetzung: "):
+            result['Zielsetzung'] = line.replace("- Zielsetzung: ", "").strip()
+        elif line.startswith("- Deadline: "):
+            result['Deadline'] = line.replace("- Deadline: ", "").strip()
+        elif line.startswith("- Budget: "):
+            result['Budget'] = line.replace("- Budget: ", "").strip()
+        elif line.startswith("- Laufzeit: "):
+            result['Laufzeit'] = line.replace("- Laufzeit: ", "").strip()
+        elif line.startswith("- Prozess: "):
+            result['Einstufig_Zweistufig'] = line.replace("- Prozess: ", "").strip()
+        elif line.startswith("- Partner: "):
+            result['Anzahl_Projektpartner'] = line.replace("- Partner: ", "").strip()
+        elif line.startswith("- Antragsberechtigt: "):
+            result['Antragsberechtigt'] = line.replace("- Antragsberechtigt: ", "").strip()
+
+    try:
+        desc_start = content.find("Link:")
+        desc_start = content.find("\n", desc_start) + 1
+        desc_end = content.find("### Metadaten")
+        result['Beschreibung'] = content[desc_start:desc_end].strip()
+    except Exception:
+        result['Beschreibung'] = "No description found."
+
+    return result
+
 # Feature 1: Call Summarization
 with tab1:
     st.header("Research Call Analysis")
@@ -140,6 +177,7 @@ with tab1:
         placeholder="https://example.com/research-funding-call",
         help="Paste the URL of a research funding call to analyze its content."
     )
+
     if st.button("Analyze Call"):
         scraper = ScraperService()
         analyzer = AnalyzerService(llm_service)
@@ -164,6 +202,20 @@ with tab1:
             else:
                 status.update(label="Failed to fetch URL.", state="error")
                 st.error("Failed to fetch the URL content.")
+
+    summaries_dir = "data/summaries"
+    os.makedirs(summaries_dir, exist_ok=True)
+    saved_files = [f for f in os.listdir(summaries_dir) if f.endswith(".md")]
+
+    col_load1, col_load2 = st.columns([3, 1])
+    with col_load1:
+        selected_file = st.selectbox("Gespeicherte Zusammenfassungen", saved_files, label_visibility="collapsed")
+    with col_load2:
+        if st.button("Laden"):
+            with open(os.path.join(summaries_dir, selected_file), "r", encoding="utf-8") as f:
+                loaded_content = f.read()
+                st.session_state.last_call = parse_md_to_result(loaded_content)
+                st.success(f"Geladen: {selected_file}")
 
     if "last_call" in st.session_state:
         result = st.session_state.last_call
@@ -212,27 +264,13 @@ Link: {result.get('Link')}
 """
         st.subheader("Speichern & Kopieren")
 
-        # Save functionality
-        summaries_dir = "data/summaries"
-        os.makedirs(summaries_dir, exist_ok=True)
-
         if st.button("Speichern", help="Speichert diese Zusammenfassung als .md Datei"):
             filename = f"{result.get('Thema', 'summary')[:50]}.md".replace(" ", "_").replace("/", "_")
             filepath = os.path.join(summaries_dir, filename)
             with open(filepath, "w", encoding="utf-8") as f:
                 f.write(summary_text)
             st.success(f"Gespeichert als {filename}")
-
-        # Load functionality
-        saved_files = [f for f in os.listdir(summaries_dir) if f.endswith(".md")]
-        if saved_files:
-            st.divider()
-            selected_file = st.selectbox("Gespeicherte Zusammenfassungen", saved_files)
-            if st.button("Laden"):
-                with open(os.path.join(summaries_dir, selected_file), "r", encoding="utf-8") as f:
-                    loaded_content = f.read()
-                    st.info(f"Inhalt von {selected_file}:")
-                    st.markdown(loaded_content)
+            st.rerun()
 
         st.divider()
         st.code(summary_text, language="markdown")
@@ -353,37 +391,109 @@ with tab4:
     st.header("Match Companies to Calls")
 
     # Matching Section
-    if "last_call" in st.session_state:
-        st.subheader("Matching for analyzed call:")
-        st.write(st.session_state.last_call.get("Thema"))
+    summaries_dir = "data/summaries"
+    os.makedirs(summaries_dir, exist_ok=True)
+    saved_calls = [f for f in os.listdir(summaries_dir) if f.endswith(".md")]
+
+    selected_call_file = st.selectbox("Wähle einen gespeicherten Call", saved_calls)
+
+    # Persistent storage for matches and topics
+    matches_dir = "data/matches"
+    topics_dir = "data/topics"
+    os.makedirs(matches_dir, exist_ok=True)
+    os.makedirs(topics_dir, exist_ok=True)
+
+    if selected_call_file:
+        call_name = selected_call_file.replace(".md", "")
+        matches_path = os.path.join(matches_dir, f"{call_name}.json")
+        topics_path = os.path.join(topics_dir, f"{call_name}.json")
+
+        with open(os.path.join(summaries_dir, selected_call_file), "r", encoding="utf-8") as f:
+            current_call_data = parse_md_to_result(f.read())
+
+        st.subheader(f"Matching für: {current_call_data.get('Thema')}")
 
         matcher = MatchingService(llm_service, st.session_state.db_manager, st.session_state.vector_store)
+
+        # Load existing matches if they exist
+        if f"matches_{call_name}" not in st.session_state:
+            if os.path.exists(matches_path):
+                with open(matches_path, "r", encoding="utf-8") as f:
+                    st.session_state[f"matches_{call_name}"] = json.load(f)
+            else:
+                st.session_state[f"matches_{call_name}"] = None
+
+        if f"topics_{call_name}" not in st.session_state:
+            if os.path.exists(topics_path):
+                with open(topics_path, "r", encoding="utf-8") as f:
+                    st.session_state[f"topics_{call_name}"] = json.load(f)
+            else:
+                st.session_state[f"topics_{call_name}"] = None
+
+        col_m1, col_m2 = st.columns(2)
+        with col_m1:
+            country_filter = st.text_input("Land filtern (z.B. Deutschland)", value="Deutschland")
+            org_type_filter = st.selectbox("Organisationsart filtern", ["Alle", "Unternehmen", "Forschungseinrichtung", "Hochschule", "KMU"])
+
         if st.button("Find Matching Companies"):
             with st.spinner("Finding matches..."):
-                query = f"Company working on {st.session_state.last_call.get('Thema')} and {st.session_state.last_call.get('Zielsetzung')}"
-                matches = matcher.hybrid_search(query)
+                query = f"Organization working on {current_call_data.get('Thema')} and {current_call_data.get('Zielsetzung')}"
+                filters = {}
+                if country_filter:
+                    filters["country"] = country_filter
+                if org_type_filter != "Alle":
+                    filters["org_type"] = org_type_filter
+
+                matches = matcher.hybrid_search(query, filters=filters, limit=10)
                 if matches:
-                    st.write("Matching Companies in Database:")
-                    for m in matches:
-                        st.info(f"**{m['name']}** - {m['industry']} ({m['state']})")
-                        st.write(m['summary'])
+                    # Generate justifications
+                    matches = matcher.generate_match_justification(current_call_data, matches)
+                    st.session_state[f"matches_{call_name}"] = matches
+                    with open(matches_path, "w", encoding="utf-8") as f:
+                        json.dump(matches, f, ensure_ascii=False, indent=4)
                 else:
-                    st.write("No matching companies found in database.")
+                    st.session_state[f"matches_{call_name}"] = []
+                    st.warning("Keine passenden Organisationen in der Datenbank gefunden.")
 
         if st.button("Suggest Research Topics"):
-            # Fetch some matching companies first to provide context
-            query = f"Company working on {st.session_state.last_call.get('Thema')} and {st.session_state.last_call.get('Zielsetzung')}"
-            matched_companies = matcher.hybrid_search(query)
+            # Use already found matches for context if available
+            matched_companies = st.session_state.get(f"matches_{call_name}") or []
 
             with st.spinner("Generating research topic suggestions..."):
                 topics = matcher.suggest_research_topics(
-                    st.session_state.last_call,
+                    current_call_data,
                     user_context=st.session_state.get("user_context", ""),
                     matched_companies=matched_companies
                 )
-                st.write("### Suggested Topics:")
-                for t in topics:
-                    st.markdown(t)
+                st.session_state[f"topics_{call_name}"] = topics
+                with open(topics_path, "w", encoding="utf-8") as f:
+                    json.dump(topics, f, ensure_ascii=False, indent=4)
+
+        # Display results
+        if st.session_state.get(f"matches_{call_name}"):
+            st.write("### Matching Organisations in Database:")
+            for m in st.session_state[f"matches_{call_name}"]:
+                with st.expander(f"**{m['name']}** - {m.get('industry', 'N/A')} ({m.get('country', 'N/A')})"):
+                    st.write(f"**Begründung:** {m.get('justification', 'Keine Begründung vorhanden.')}")
+                    st.write(f"**Zusammenfassung:** {m['summary']}")
+
+                    st.divider()
+                    col_info1, col_info2 = st.columns(2)
+                    with col_info1:
+                        url = m.get('url', 'N/A')
+                        if url != 'N/A':
+                            st.write(f"**Webseite:** [{url}]({url})")
+                        else:
+                            st.write("**Webseite:** N/A")
+                        st.write(f"**Typ:** {m.get('org_type', 'N/A')}")
+                    with col_info2:
+                        st.write(f"**Mitarbeiter:** {m.get('employees_count', 'N/A')}")
+                        st.write(f"**KMU Status:** {'Ja' if m.get('kmu_status') else 'Nein'}")
+
+        if st.session_state.get(f"topics_{call_name}"):
+            st.write("### Suggested Topics:")
+            for t in st.session_state[f"topics_{call_name}"]:
+                st.markdown(t)
 
         st.divider()
 
@@ -436,18 +546,28 @@ with tab5:
         li_service = LinkedInService(llm_service, li_username, li_password)
         if st.button("Fetch and Match Contacts"):
             if "last_call" in st.session_state:
-                with st.spinner("Fetching contacts and matching..."):
-                    contacts = li_service.get_first_degree_contacts()
+                with st.status("LinkedIn processing...") as status:
+                    contacts = li_service.get_first_degree_contacts(status_callback=lambda msg: status.update(label=msg))
                     if contacts:
-                        matches = li_service.find_matching_contacts_for_call(contacts, st.session_state.last_call)
-                        st.write(f"Matched {len(matches)} contacts:")
-                        for contact in matches:
-                            c_name = f"{contact.get('firstName')} {contact.get('lastName')}"
-                            st.write(f"**{c_name}** - {contact.get('occupation')}")
-                            if st.button(f"Generate Message for {contact.get('firstName')}", key=contact.get('public_id')):
-                                msg = li_service.generate_outreach_message(c_name, "his/her company", st.session_state.last_call)
-                                st.text_area("Message:", value=msg, height=200)
+                        matches = li_service.find_matching_contacts_for_call(
+                            contacts,
+                            st.session_state.last_call,
+                            status_callback=lambda msg: status.update(label=msg)
+                        )
+                        if matches:
+                            status.update(label=f"Matched {len(matches)} contacts!", state="complete")
+                            st.write(f"Matched {len(matches)} contacts:")
+                            for contact in matches:
+                                c_name = f"{contact.get('firstName')} {contact.get('lastName')}"
+                                st.write(f"**{c_name}** - {contact.get('occupation')}")
+                                if st.button(f"Generate Message for {contact.get('firstName')}", key=contact.get('public_id')):
+                                    msg = li_service.generate_outreach_message(c_name, "his/her company", st.session_state.last_call)
+                                    st.text_area("Message:", value=msg, height=200)
+                        else:
+                            status.update(label="No matches found.", state="error")
+                            st.info("No matching LinkedIn contacts found for this call.")
                     else:
+                        status.update(label="No contacts found.", state="error")
                         st.info("No LinkedIn contacts found. Check your credentials.")
             else:
                 st.warning("Please analyze a research call in the first tab first.")
@@ -471,24 +591,63 @@ with tab6:
                 "Name": c.name,
                 "URL": c.url,
                 "Industry": c.industry,
+                "Land": c.country,
+                "Organisationsart": c.org_type,
                 "State": c.state,
                 "City": c.city,
                 "Employees": c.employees_count,
                 "SME": c.kmu_status,
                 "Research Active": c.research_active,
-                "Summary": c.summary
+                "Summary": c.summary,
+                "Products": c.products
             })
 
-        st.dataframe(data, width="stretch")
+        edited_data = st.data_editor(
+            data,
+            width="stretch",
+            num_rows="dynamic",
+            key="db_editor",
+            on_change=None # We'll check the session state instead
+        )
+
+        # Check for changes in data_editor and auto-save
+        if st.session_state.db_editor.get("edited_rows") or st.session_state.db_editor.get("added_rows") or st.session_state.db_editor.get("deleted_rows"):
+            # Prepare data for update from the current state of edited_data
+            update_list = []
+            for row in edited_data:
+                update_list.append({
+                    "name": row.get("Name"),
+                    "url": row.get("URL"),
+                    "industry": row.get("Industry"),
+                    "country": row.get("Land"),
+                    "org_type": row.get("Organisationsart"),
+                    "state": row.get("State"),
+                    "city": row.get("City"),
+                    "employees_count": row.get("Employees"),
+                    "kmu_status": row.get("SME"),
+                    "research_active": row.get("Research Active"),
+                    "summary": row.get("Summary"),
+                    "products": row.get("Products")
+                })
+
+            try:
+                st.session_state.db_manager.update_companies(update_list)
+                # Clear changes to avoid infinite loop or duplicate saves if rerun is called elsewhere
+                # but streamlit handles this usually. To be safe, we just show a message.
+                st.toast("Änderungen automatisch gespeichert!")
+            except Exception as e:
+                st.error(f"Fehler beim automatischen Speichern: {e}")
 
         # Detailed view in expanders
-        st.subheader("Detailed Company Profiles")
+        st.subheader("Detailed Organization Profiles")
         for c in companies:
             with st.expander(f"{c.name or c.url}"):
                 col1, col2 = st.columns(2)
                 with col1:
                     st.write(f"**URL:** {c.url}")
                     st.write(f"**Industry:** {c.industry}")
+                    st.write(f"**Country:** {c.country}")
+                    st.write(f"**Organization Type:** {c.org_type}")
                     st.write(f"**State:** {c.state}")
                     st.write(f"**City:** {c.city}")
                 with col2:
@@ -498,7 +657,7 @@ with tab6:
 
                 st.write("**Summary:**")
                 st.write(c.summary)
-                st.write("**Products:**")
+                st.write("**Products/Services:**")
                 st.write(c.products)
     else:
         st.info("No companies indexed yet. Go to 'Company Indexing' to add some.")

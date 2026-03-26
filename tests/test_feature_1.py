@@ -15,12 +15,12 @@ def test_scraper_service():
         url = "https://example.com/research-call"
 
         # Act
-        content = scraper_service.fetch_page_content(url)
+        result = scraper_service.fetch_page_content(url)
 
         # Assert
-        assert content is not None
-        assert "Test Title" in content
-        assert "Test Content" in content
+        assert result is not None
+        assert "Test Title" in result["text"]
+        assert "Test Content" in result["text"]
         print("ScraperService test passed.")
 
 def test_analyzer_service():

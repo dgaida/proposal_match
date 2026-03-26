@@ -45,12 +45,12 @@ class MatchingService:
         # Simplified parsing for the suggestion list
         return [line.strip("- ").strip("12345. ") for line in response.splitlines() if line.strip()]
 
-    def hybrid_search(self, query: str, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    def hybrid_search(self, query: str, filters: Optional[Dict[str, Any]] = None, limit: int = 10) -> List[Dict[str, Any]]:
         """
         Performs a hybrid search combining semantic similarity (ChromaDB) and metadata filters (SQLite).
         """
-        # Step 1: Semantic search in ChromaDB
-        vector_results = self.vector_store.query_companies(query_text=query, n_results=10)
+        # Step 1: Semantic search in ChromaDB - search more than the limit to allow for filtering
+        vector_results = self.vector_store.query_companies(query_text=query, n_results=50)
 
         # Extract the results from the vector store response
         company_ids = vector_results.get("ids", [[]])[0]
@@ -66,23 +66,66 @@ class MatchingService:
                 query_obj = query_obj.filter(Company.industry == filters["industry"])
             if filters.get("kmu_status") is not None:
                 query_obj = query_obj.filter(Company.kmu_status == filters["kmu_status"])
+            if filters.get("country"):
+                query_obj = query_obj.filter(Company.country == filters["country"])
+            if filters.get("org_type"):
+                query_obj = query_obj.filter(Company.org_type == filters["org_type"])
 
         results = query_obj.all()
+
+        # Maintain vector search order (relevance)
+        id_to_result = {r.url: r for r in results}
+        sorted_results = [id_to_result[url] for url in company_ids if url in id_to_result]
+
+        # Limit the results
+        final_results = sorted_results[:limit]
+
         # Convert to dictionary for easy consumption
         formatted_results = []
-        for r in results:
+        for r in final_results:
             formatted_results.append({
                 "name": r.name,
                 "url": r.url,
                 "state": r.state,
                 "city": r.city,
+                "country": r.country,
+                "org_type": r.org_type,
                 "industry": r.industry,
                 "summary": r.summary,
+                "employees_count": r.employees_count,
                 "kmu_status": r.kmu_status
             })
 
         session.close()
         return formatted_results
+
+    def generate_match_justification(self, call_data: Dict[str, Any], matched_companies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Generates a justification for why each matched company fits the call.
+        """
+        if not matched_companies:
+            return []
+
+        results_with_justification = []
+        for company in matched_companies:
+            prompt = f"""
+            Given the following research call and the information about an organization,
+            explain in 2-3 sentences why this organization is a particularly good match for this call.
+            BE BRIEF AND SPECIFIC. RESPOND IN GERMAN.
+
+            Call: {json.dumps(call_data)}
+            Organization: {company['name']} ({company['org_type']}) - {company['summary']}
+            """
+            messages = [
+                {"role": "system", "content": "You are an expert in research collaborations."},
+                {"role": "user", "content": prompt}
+            ]
+            justification = self.llm_service.chat_completion(messages)
+            company_copy = company.copy()
+            company_copy['justification'] = justification
+            results_with_justification.append(company_copy)
+
+        return results_with_justification
 
     def search_internet_for_companies(self, topic: str) -> List[Dict[str, str]]:
         """

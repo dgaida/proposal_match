@@ -19,9 +19,16 @@ class IndexingService:
         Crawls the given links, extracts information, and stores it.
         """
         for link in links:
-            content = self.scraper_service.fetch_page_content(link)
-            if content:
-                extracted_data = self._extract_company_info(content, link)
+            # Normalize URL: change http:// to https://
+            if link.startswith("http://"):
+                link = link.replace("http://", "https://", 1)
+
+            scraper_result = self.scraper_service.fetch_page_content(link)
+            if scraper_result:
+                content = scraper_result["text"]
+                final_url = scraper_result["final_url"]
+
+                extracted_data = self._extract_company_info(content, final_url)
                 if extracted_data:
                     # Split metadata and semantic info for storage
                     summary = extracted_data.get("Zusammenfassung")
@@ -34,9 +41,11 @@ class IndexingService:
 
                     metadata = {
                         "name": extracted_data.get("Name"),
-                        "url": link,
+                        "url": final_url,
                         "state": extracted_data.get("Bundesland"),
                         "city": extracted_data.get("Stadt"),
+                        "country": extracted_data.get("Land"),
+                        "org_type": extracted_data.get("Organisationsart"),
                         "employees_count": extracted_data.get("Anzahl_Mitarbeiter"),
                         "kmu_status": extracted_data.get("KMU_Status"),
                         "industry": extracted_data.get("Branche"),
@@ -50,23 +59,25 @@ class IndexingService:
 
                     # Store in ChromaDB
                     semantic_text = f"Company: {metadata['name']}. {metadata['summary']} Products: {metadata['products']}"
-                    self.vector_store.add_company_vector(link, semantic_text, metadata)
+                    self.vector_store.add_company_vector(final_url, semantic_text, metadata)
 
     def _extract_company_info(self, text: str, url: str) -> Optional[Dict[str, Any]]:
         """
         Extracts company information from the given text using the LLM.
         """
         prompt = f"""
-        Extract the following information from the text for the company website {url} in JSON format:
-        - Name: The name of the company.
-        - Bundesland: The state (German "Bundesland").
+        Extract the following information from the text for the organization website {url} in JSON format:
+        - Name: The name of the organization.
+        - Land: The country of the organization.
+        - Bundesland: The state (German "Bundesland"), if applicable.
         - Stadt: The city.
-        - Anzahl_Mitarbeiter: Approximate number of employees.
-        - KMU_Status: Is it an SME? (Boolean).
+        - Organisationsart: The type of organization (e.g., "Unternehmen", "Forschungseinrichtung", "Hochschule", "Kommunen").
+        - Anzahl_Mitarbeiter: Approximate number of employees (null for non-companies).
+        - KMU_Status: Is it an SME? (Boolean, null for non-companies).
         - Branche: Industry/Sector.
-        - Bereits_aktiv_in_Forschungsprojekten: Has the company been active in research projects? (Boolean).
-        - Zusammenfassung: A brief summary of the company.
-        - Produkte: Description of important products.
+        - Bereits_aktiv_in_Forschungsprojekten: Has the organization been active in research projects? (Boolean).
+        - Zusammenfassung: A brief summary of the organization. MUST BE IN GERMAN.
+        - Produkte: Description of important products or services.
 
         Return only the JSON object.
         """
@@ -86,7 +97,7 @@ class IndexingService:
             return indexed_urls
 
         # Get all existing URLs in the database to avoid re-indexing
-        existing_urls = {c.url for c in self.db_manager.get_all_companies()}
+        existing_urls = {c.url.rstrip('/') for c in self.db_manager.get_all_companies()}
         processed_in_this_run = set()
 
         for root, _, files in os.walk(folder_path):
@@ -95,7 +106,8 @@ class IndexingService:
                     file_path = os.path.join(root, file)
                     url = self._extract_url_from_file(file_path)
                     if url:
-                        if url in existing_urls or url in processed_in_this_run:
+                        normalized_url = url.rstrip('/')
+                        if normalized_url in existing_urls or normalized_url in processed_in_this_run:
                             if status_callback:
                                 status_callback(f"Skipping already indexed or duplicate URL: {url}")
                             continue
