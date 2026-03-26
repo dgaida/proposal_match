@@ -15,6 +15,8 @@ class Company(Base):
     employees_count = Column(Integer)
     kmu_status = Column(Boolean)
     industry = Column(String(255))
+    country = Column(String(100))
+    org_type = Column(String(100))
     research_active = Column(Boolean)
     summary = Column(Text)
     products = Column(Text)
@@ -25,7 +27,26 @@ class DBManager:
         os.makedirs("data", exist_ok=True)
         self.engine = create_engine(db_url)
         Base.metadata.create_all(self.engine)
+        self._ensure_columns_exist()
         self.Session = sessionmaker(bind=self.engine)
+
+    def _ensure_columns_exist(self):
+        """
+        Ensures that all columns defined in the model exist in the database.
+        This handles migrations for existing databases.
+        """
+        from sqlalchemy import inspect, text
+        inspector = inspect(self.engine)
+        if 'companies' in inspector.get_table_names():
+            columns = [c['name'] for c in inspector.get_columns('companies')]
+
+            with self.engine.connect() as conn:
+                if 'country' not in columns:
+                    conn.execute(text("ALTER TABLE companies ADD COLUMN country VARCHAR(100)"))
+                    conn.commit()
+                if 'org_type' not in columns:
+                    conn.execute(text("ALTER TABLE companies ADD COLUMN org_type VARCHAR(100)"))
+                    conn.commit()
 
     def add_company(self, company_data: Dict[str, Any]):
         """
@@ -52,3 +73,24 @@ class DBManager:
         companies = session.query(Company).all()
         session.close()
         return companies
+
+    def update_companies(self, updated_data: List[Dict[str, Any]]):
+        """
+        Batch updates companies in the database.
+        """
+        session = self.Session()
+        try:
+            for data in updated_data:
+                # Assuming 'url' is the unique identifier for merging
+                if 'url' in data:
+                    company = session.query(Company).filter(Company.url == data['url']).first()
+                    if company:
+                        for key, value in data.items():
+                            if hasattr(company, key):
+                                setattr(company, key, value)
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()

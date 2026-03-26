@@ -17,7 +17,10 @@ def test_indexing_service():
     mock_llm_service.extract_structured_data.return_value = '{"Name": "Test Company", "Bundesland": "NRW", "Zusammenfassung": "A test company summary."}'
 
     with patch("app.services.scraper_service.ScraperService.fetch_page_content") as mock_fetch:
-        mock_fetch.return_value = "This is a test company website content."
+        mock_fetch.return_value = {
+            "text": "This is a test company website content.",
+            "final_url": "https://testcompany.com"
+        }
 
         indexing_service = IndexingService(mock_llm_service, mock_db_manager, mock_vector_store)
         links = ["https://testcompany.com"]
