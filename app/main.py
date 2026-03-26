@@ -163,7 +163,7 @@ def parse_md_to_result(content):
         desc_start = content.find("\n", desc_start) + 1
         desc_end = content.find("### Metadaten")
         result['Beschreibung'] = content[desc_start:desc_end].strip()
-    except:
+    except Exception:
         result['Beschreibung'] = "No description found."
 
     return result
