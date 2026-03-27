@@ -551,23 +551,37 @@ with tab5:
                 with st.status("LinkedIn processing...") as status:
                     contacts = li_service.get_first_degree_contacts(limit=li_limit, status_callback=lambda msg: status.update(label=msg))
                     if contacts:
-                        matches = li_service.find_matching_contacts_for_call(
+                        result = li_service.find_matching_contacts_for_call(
                             contacts,
                             st.session_state.last_call,
                             status_callback=lambda msg: status.update(label=msg)
                         )
-                        if matches:
-                            status.update(label=f"Matched {len(matches)} contacts!", state="complete")
-                            st.write(f"Matched {len(matches)} contacts:")
-                            for contact in matches:
-                                c_name = f"{contact.get('firstName')} {contact.get('lastName')}"
-                                st.write(f"**{c_name}** - {contact.get('occupation')}")
-                                if st.button(f"Generate Message for {contact.get('firstName')}", key=contact.get('public_id')):
-                                    msg = li_service.generate_outreach_message(c_name, "his/her company", st.session_state.last_call)
-                                    st.text_area("Message:", value=msg, height=200)
+                        matches = result.get("matches", [])
+                        identified_names = result.get("identified_names", [])
+                        criteria = result.get("criteria", "")
+
+                        if identified_names:
+                            status.update(label=f"LLM identified {len(identified_names)} potential matches!", state="complete")
+
+                            st.subheader("Matching Criteria")
+                            st.write(criteria)
+
+                            st.subheader("Contacts identified by LLM")
+                            st.write(", ".join(identified_names))
+
+                            if matches:
+                                st.subheader("Final Matching Contacts")
+                                for contact in matches:
+                                    c_name = f"{contact.get('firstName')} {contact.get('lastName')}"
+                                    st.write(f"**{c_name}** - {contact.get('occupation')}")
+                                    if st.button(f"Generate Message for {contact.get('firstName')}", key=contact.get('public_id')):
+                                        msg = li_service.generate_outreach_message(c_name, "his/her company", st.session_state.last_call)
+                                        st.text_area("Message:", value=msg, height=200)
+                            else:
+                                st.info("No matching contacts found in the detailed profiles.")
                         else:
                             status.update(label="No matches found.", state="error")
-                            st.info("No matching LinkedIn contacts found for this call.")
+                            st.info("No matching LinkedIn contacts identified by the LLM.")
                     else:
                         status.update(label="No contacts found.", state="error")
                         st.info("No LinkedIn contacts found. Check your credentials.")
@@ -626,6 +640,9 @@ with tab6:
                 "Summary": c.summary,
                 "Products": c.products
             })
+
+        # Sort by Name (case-insensitive)
+        data.sort(key=lambda x: (x.get("Name") or "").lower())
 
         st.write(f"Anzahl angezeigter Einträge: {len(data)}")
 
