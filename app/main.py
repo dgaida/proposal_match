@@ -157,6 +157,8 @@ def parse_md_to_result(content):
             result['Anzahl_Projektpartner'] = line.replace("- Partner: ", "").strip()
         elif line.startswith("- Antragsberechtigt: "):
             result['Antragsberechtigt'] = line.replace("- Antragsberechtigt: ", "").strip()
+        elif line.startswith("- Antragsberechtigt_Details: "):
+            result['Antragsberechtigt_Details'] = line.replace("- Antragsberechtigt_Details: ", "").strip()
 
     try:
         desc_start = content.find("Link:")
@@ -238,6 +240,7 @@ with tab1:
             st.write(f"**Partner:** {result.get('Anzahl_Projektpartner')}")
 
         st.write(f"**Antragsberechtigt:** {result.get('Antragsberechtigt', 'N/A')}")
+        st.write(f"**Antragsberechtigt_Details:** {result.get('Antragsberechtigt_Details', 'N/A')}")
 
         if result.get("Andere_Metadaten"):
             st.write(f"**Andere Metadaten:** {result.get('Andere_Metadaten')}")
@@ -261,6 +264,7 @@ Link: {result.get('Link')}
 - Prozess: {result.get('Einstufig_Zweistufig')}
 - Partner: {result.get('Anzahl_Projektpartner')}
 - Antragsberechtigt: {result.get('Antragsberechtigt')}
+- Antragsberechtigt_Details: {result.get('Antragsberechtigt_Details')}
 """
         st.subheader("Speichern & Kopieren")
 
@@ -433,15 +437,22 @@ with tab4:
 
         col_m1, col_m2 = st.columns(2)
         with col_m1:
-            country_filter = st.text_input("Land filtern (z.B. Deutschland)", value="Deutschland")
-            org_type_filter = st.selectbox("Organisationsart filtern", ["Alle", "Unternehmen", "Forschungseinrichtung", "Hochschule", "KMU"])
+            companies = st.session_state.db_manager.get_all_companies()
+            countries = sorted(list({c.country for c in companies if c.country}))
+            states = sorted(list({c.state for c in companies if c.state}))
+
+            country_filter = st.selectbox("Land filtern", ["Alle"] + countries, index=0, key="match_country_filter")
+            state_filter = st.selectbox("Bundesland filtern", ["Alle"] + states, index=0, key="match_state_filter")
+            org_type_filter = st.selectbox("Organisationsart filtern", ["Alle", "Unternehmen", "Forschungseinrichtung", "Hochschule", "KMU"], key="match_org_filter")
 
         if st.button("Find Matching Companies"):
             with st.spinner("Finding matches..."):
                 query = f"Organization working on {current_call_data.get('Thema')} and {current_call_data.get('Zielsetzung')}"
                 filters = {}
-                if country_filter:
+                if country_filter != "Alle":
                     filters["country"] = country_filter
+                if state_filter != "Alle":
+                    filters["state"] = state_filter
                 if org_type_filter != "Alle":
                     filters["org_type"] = org_type_filter
 
@@ -607,13 +618,13 @@ with tab6:
         st.subheader("Filter & Suche")
         col_f1, col_f2, col_f3 = st.columns(3)
         with col_f1:
-            name_filter = st.text_input("Name suchen", placeholder="Unternehmen A")
+            name_filter = st.text_input("Name suchen", placeholder="Unternehmen A", key="db_name_filter")
         with col_f2:
             countries = sorted(list({c.country for c in companies if c.country}))
-            country_filter = st.selectbox("Land filtern", ["Alle"] + countries)
+            country_filter = st.selectbox("Land filtern", ["Alle"] + countries, key="db_country_filter")
         with col_f3:
             states = sorted(list({c.state for c in companies if c.state}))
-            state_filter = st.selectbox("Bundesland filtern", ["Alle"] + states)
+            state_filter = st.selectbox("Bundesland filtern", ["Alle"] + states, key="db_state_filter")
 
         # Convert to list of dicts for dataframe
         data = []
@@ -627,6 +638,7 @@ with tab6:
                 continue
 
             data.append({
+                "Select": False,
                 "Name": c.name,
                 "URL": c.url,
                 "Industry": c.industry,
@@ -650,12 +662,12 @@ with tab6:
             data,
             width="stretch",
             num_rows="dynamic",
-            key="db_editor",
-            on_change=None # We'll check the session state instead
+            key="db_editor"
         )
 
         # Check for changes in data_editor and auto-save
-        if st.session_state.db_editor.get("edited_rows") or st.session_state.db_editor.get("added_rows") or st.session_state.db_editor.get("deleted_rows"):
+        db_edits = st.session_state.get("db_editor", {})
+        if db_edits.get("edited_rows") or db_edits.get("added_rows") or db_edits.get("deleted_rows"):
             # Prepare data for update from the current state of edited_data
             update_list = []
             for row in edited_data:
@@ -676,32 +688,43 @@ with tab6:
 
             try:
                 st.session_state.db_manager.update_companies(update_list)
-                # Clear changes to avoid infinite loop or duplicate saves if rerun is called elsewhere
-                # but streamlit handles this usually. To be safe, we just show a message.
                 st.toast("Änderungen automatisch gespeichert!")
             except Exception as e:
                 st.error(f"Fehler beim automatischen Speichern: {e}")
 
         # Detailed view in expanders
         st.subheader("Detailed Organization Profiles")
-        for c in companies:
-            with st.expander(f"{c.name or c.url}"):
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.write(f"**URL:** {c.url}")
-                    st.write(f"**Industry:** {c.industry}")
-                    st.write(f"**Country:** {c.country}")
-                    st.write(f"**Organization Type:** {c.org_type}")
-                    st.write(f"**State:** {c.state}")
-                    st.write(f"**City:** {c.city}")
-                with col2:
-                    st.write(f"**Employees:** {c.employees_count}")
-                    st.write(f"**SME:** {c.kmu_status}")
-                    st.write(f"**Research Active:** {c.research_active}")
 
-                st.write("**Summary:**")
-                st.write(c.summary)
-                st.write("**Products/Services:**")
-                st.write(c.products)
+        # Determine selected URLs safely
+        selected_urls = []
+        if edited_data is not None:
+            if isinstance(edited_data, list):
+                selected_urls = [row.get("URL") for row in edited_data if isinstance(row, dict) and row.get("Select") and row.get("URL")]
+            else: # Handle case if it's a DataFrame
+                try:
+                    selected_urls = edited_data[edited_data["Select"] == True]["URL"].tolist()
+                except Exception:
+                    selected_urls = []
+
+        for c in companies:
+            if c.url in selected_urls:
+                with st.expander(f"{c.name or c.url}"):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.write(f"**URL:** {c.url}")
+                        st.write(f"**Industry:** {c.industry}")
+                        st.write(f"**Country:** {c.country}")
+                        st.write(f"**Organization Type:** {c.org_type}")
+                        st.write(f"**State:** {c.state}")
+                        st.write(f"**City:** {c.city}")
+                    with col2:
+                        st.write(f"**Employees:** {c.employees_count}")
+                        st.write(f"**SME:** {c.kmu_status}")
+                        st.write(f"**Research Active:** {c.research_active}")
+
+                    st.write("**Summary:**")
+                    st.write(c.summary)
+                    st.write("**Products/Services:**")
+                    st.write(c.products)
     else:
         st.info("No companies indexed yet. Go to 'Company Indexing' to add some.")
