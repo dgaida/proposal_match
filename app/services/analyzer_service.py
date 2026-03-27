@@ -20,6 +20,7 @@ class AnalyzerService:
         - Budget: Estimated or maximum budget for the call.
         - Laufzeit: The duration of the projects.
         - Antragsberechtigt: Who is eligible to apply? (e.g., Hochschulen, Unternehmen, KMUs, große Unternehmen, Forschungseinrichtungen, Kommunen, Verbände).
+        - Antragsberechtigt_Details: Detailed information on eligibility, specifically mentioning if only SMEs (KMU) are allowed or if there are limits regarding the number of employees, turnover, profit, etc.
         - Andere_Metadaten: Any other relevant information.
         - Link: The URL to the research call. {f'Use {url}' if url else 'Extract from text if available.'}
         - Beschreibung: A detailed textual description of the call in German, including the most important contents, research goals, etc., formatted in Markdown.
