@@ -7,6 +7,9 @@ def test_db_migration():
     """
     Verifies that DBManager handles legacy database migration by adding new columns.
     """
+    # Ensure data directory exists
+    os.makedirs("data", exist_ok=True)
+
     # 1. Create a "legacy" database without the new columns
     legacy_db_path = os.path.abspath("data/test_legacy.db")
     legacy_db_url = f"sqlite:///{legacy_db_path}"
