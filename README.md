@@ -2,12 +2,12 @@
 
 A comprehensive tool to analyze research calls, find funding opportunities, and manage company collaborations with AI-powered insights.
 
-[![Version](https://img.shields.io/github/v/tag/dgaida/funding-app?label=version)](https://github.com/dgaida/funding-app/tags)
+[![Version](https://img.shields.io/github/v/tag/dgaida/proposal_match?label=version)](https://github.com/dgaida/proposal_match/tags)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Code Quality](https://github.com/dgaida/funding-app/actions/workflows/lint.yml/badge.svg)](https://github.com/dgaida/funding-app/actions/workflows/lint.yml)
-[![Tests](https://github.com/dgaida/funding-app/actions/workflows/tests.yml/badge.svg)](https://github.com/dgaida/funding-app/actions/workflows/tests.yml)
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/dgaida/funding-app/graphs/commit-activity)
-![Last commit](https://img.shields.io/github/last-commit/dgaida/funding-app)
+[![Code Quality](https://github.com/dgaida/proposal_match/actions/workflows/lint.yml/badge.svg)](https://github.com/dgaida/proposal_match/actions/workflows/lint.yml)
+[![Tests](https://github.com/dgaida/proposal_match/actions/workflows/tests.yml/badge.svg)](https://github.com/dgaida/proposal_match/actions/workflows/tests.yml)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/dgaida/proposal_match/graphs/commit-activity)
+![Last commit](https://img.shields.io/github/last-commit/dgaida/proposal_match)
 
 
 ## Features
