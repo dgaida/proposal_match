@@ -23,7 +23,7 @@ class LLMService:
             self.available_providers[provider] = api_key
             self._set_env_key(provider, api_key)
 
-        self.client = LLMClient(api_choice=provider, llm=llm_model, max_tokens=4096) if llm_model else LLMClient(api_choice=provider, max_tokens=4096)
+        self.client = LLMClient(api_choice=provider, llm=llm_model, max_tokens=8192) if llm_model else LLMClient(api_choice=provider, max_tokens=8192)
 
     def _set_env_key(self, provider: str, api_key: str):
         if provider == "openai":
