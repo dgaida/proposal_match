@@ -2,12 +2,12 @@
 
 A comprehensive tool to analyze research calls, find funding opportunities, and manage company collaborations with AI-powered insights.
 
-[![Version](https://img.shields.io/github/v/tag/dgaida/proposal_match?label=version)](https://github.com/dgaida/proposal_match/tags)
+[![Version](https://img.shields.io/github/v/tag/dgaida/funding-app?label=version)](https://github.com/dgaida/funding-app/tags)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Code Quality](https://github.com/dgaida/proposal_match/actions/workflows/lint.yml/badge.svg)](https://github.com/dgaida/proposal_match/actions/workflows/lint.yml)
-[![Tests](https://github.com/dgaida/proposal_match/actions/workflows/tests.yml/badge.svg)](https://github.com/dgaida/proposal_match/actions/workflows/tests.yml)
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/dgaida/proposal_match/graphs/commit-activity)
-![Last commit](https://img.shields.io/github/last-commit/dgaida/proposal_match)
+[![Code Quality](https://github.com/dgaida/funding-app/actions/workflows/lint.yml/badge.svg)](https://github.com/dgaida/funding-app/actions/workflows/lint.yml)
+[![Tests](https://github.com/dgaida/funding-app/actions/workflows/tests.yml/badge.svg)](https://github.com/dgaida/funding-app/actions/workflows/tests.yml)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/dgaida/funding-app/graphs/commit-activity)
+![Last commit](https://img.shields.io/github/last-commit/dgaida/funding-app)
 
 
 ## Features
@@ -18,6 +18,7 @@ A comprehensive tool to analyze research calls, find funding opportunities, and 
 4.  **Hybrid Matching**: Match indexed companies to specific research calls using a combination of SQL filtering and semantic vector search (ChromaDB).
 5.  **External Discovery**: Search the internet for new potential partners and index them with one click.
 6.  **LinkedIn Integration**: Fetch 1st-degree LinkedIn contacts, match them to research calls, and generate personalized outreach messages.
+7.  **Configurable Limits**: Set custom limits for LinkedIn contact retrieval and recursive folder indexing to optimize performance.
 
 ## Installation
 

@@ -372,11 +372,12 @@ with tab3:
         placeholder="/path/to/your/links/folder",
         help="Provide a local folder path to recursively search for and index .url files."
     )
+    folder_limit = st.number_input("Limit für Ordner-Indexierung", min_value=1, value=25, step=1, help="Maximale Anzahl neuer Unternehmen, die aus dem Ordner indexiert werden sollen.")
     if st.button("Index from Folder"):
         if folder_path and os.path.exists(folder_path):
             indexer = IndexingService(llm_service, st.session_state.db_manager, st.session_state.vector_store)
             with st.status(f"Scanning {folder_path}...") as status:
-                indexed = indexer.index_from_folder(folder_path, status_callback=lambda msg: status.update(label=msg))
+                indexed = indexer.index_from_folder(folder_path, limit=folder_limit, status_callback=lambda msg: status.update(label=msg))
                 status.update(label=f"Indexed {len(indexed)} URLs from folder.", state="complete")
             st.success(f"Successfully indexed {len(indexed)} companies from folder.")
             if indexed:
@@ -544,10 +545,11 @@ with tab5:
     st.header("LinkedIn Contacts for Call Matching")
     if li_username and li_password:
         li_service = LinkedInService(llm_service, li_username, li_password)
+        li_limit = st.number_input("Anzahl zu suchender Kontakte", min_value=1, value=20, step=1, help="Begrenzt die Anzahl der abgerufenen 1st-degree Kontakte.")
         if st.button("Fetch and Match Contacts"):
             if "last_call" in st.session_state:
                 with st.status("LinkedIn processing...") as status:
-                    contacts = li_service.get_first_degree_contacts(status_callback=lambda msg: status.update(label=msg))
+                    contacts = li_service.get_first_degree_contacts(limit=li_limit, status_callback=lambda msg: status.update(label=msg))
                     if contacts:
                         matches = li_service.find_matching_contacts_for_call(
                             contacts,
