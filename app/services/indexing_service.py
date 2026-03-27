@@ -39,11 +39,11 @@ class IndexingService:
                     # Split metadata and semantic info for storage
                     summary = extracted_data.get("Zusammenfassung")
                     if isinstance(summary, list):
-                        summary = "\n".join(summary)
+                        summary = "\n".join(str(s) for s in summary)
 
                     products = extracted_data.get("Produkte")
                     if isinstance(products, list):
-                        products = "\n".join(products)
+                        products = "\n".join(str(p) for p in products)
 
                     metadata = {
                         "name": extracted_data.get("Name"),
