@@ -13,7 +13,7 @@ class LinkedInService:
             except Exception as e:
                 print(f"Failed to initialize LinkedIn API: {e}")
 
-    def get_first_degree_contacts(self, status_callback: Optional[Callable[[str], None]] = None) -> List[Dict[str, Any]]:
+    def get_first_degree_contacts(self, limit: int = -1, status_callback: Optional[Callable[[str], None]] = None) -> List[Dict[str, Any]]:
         """
         Fetches 1st-degree contacts from LinkedIn.
         """
@@ -28,7 +28,7 @@ class LinkedInService:
             print("LinkedIn: Fetching 1st-degree contacts...")
 
             # Using search_people with network_depths=['F'] for 1st-degree contacts.
-            connections = self.api.search_people(network_depths=['F'])
+            connections = self.api.search_people(network_depths=['F'], limit=limit)
 
             if status_callback:
                 status_callback(f"Successfully fetched {len(connections)} contacts.")
