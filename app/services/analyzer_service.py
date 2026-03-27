@@ -24,6 +24,8 @@ class AnalyzerService:
         - Andere_Metadaten: Any other relevant information.
         - Link: The URL to the research call. {f'Use {url}' if url else 'Extract from text if available.'}
         - Beschreibung: A detailed textual description of the call in German, including the most important contents, research goals, etc., formatted in Markdown.
+          Important: The description MUST include a separate paragraph for 'Forschungsschwerpunkte' (or 'Gegenstand der Förderung').
+          The total length of the 'Beschreibung' text should be at least 800 tokens.
 
         Return only the JSON object.
         """

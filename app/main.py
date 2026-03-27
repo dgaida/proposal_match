@@ -454,7 +454,11 @@ with tab4:
                 if state_filter != "Alle":
                     filters["state"] = state_filter
                 if org_type_filter != "Alle":
-                    filters["org_type"] = org_type_filter
+                    if org_type_filter == "KMU":
+                        filters["org_type"] = "Unternehmen"
+                        filters["kmu_status"] = True
+                    else:
+                        filters["org_type"] = org_type_filter
 
                 matches = matcher.hybrid_search(query, filters=filters, limit=10)
                 if matches:
@@ -616,7 +620,7 @@ with tab6:
     if companies:
         # Filtering logic
         st.subheader("Filter & Suche")
-        col_f1, col_f2, col_f3 = st.columns(3)
+        col_f1, col_f2, col_f3, col_f4 = st.columns(4)
         with col_f1:
             name_filter = st.text_input("Name suchen", placeholder="Unternehmen A", key="db_name_filter")
         with col_f2:
@@ -625,6 +629,12 @@ with tab6:
         with col_f3:
             states = sorted(list({c.state for c in companies if c.state}))
             state_filter = st.selectbox("Bundesland filtern", ["Alle"] + states, key="db_state_filter")
+        with col_f4:
+            org_types = sorted(list({c.org_type for c in companies if c.org_type}))
+            org_filter_options = ["Alle"] + org_types
+            if "KMU" not in org_filter_options:
+                org_filter_options.append("KMU")
+            org_type_filter = st.selectbox("Organisationsart filtern", org_filter_options, key="db_org_type_filter")
 
         # Convert to list of dicts for dataframe
         data = []
@@ -636,6 +646,12 @@ with tab6:
                 continue
             if state_filter != "Alle" and c.state != state_filter:
                 continue
+            if org_type_filter != "Alle":
+                if org_type_filter == "KMU":
+                    if c.org_type != "Unternehmen" or not c.kmu_status:
+                        continue
+                elif c.org_type != org_type_filter:
+                    continue
 
             data.append({
                 "Select": False,
