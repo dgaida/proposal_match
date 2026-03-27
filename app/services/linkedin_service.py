@@ -34,6 +34,10 @@ class LinkedInService:
                 status_callback(f"Successfully fetched {len(connections)} contacts.")
             print(f"LinkedIn: Successfully fetched {len(connections)} contacts.")
 
+            # Print contact names comma-separated
+            contact_names = [f"{c.get('firstName')} {c.get('lastName')}" for c in connections]
+            print(f"LinkedIn Contacts: {', '.join(contact_names)}")
+
             return connections
         except Exception as e:
             msg = f"Error fetching LinkedIn contacts: {e}"
@@ -60,12 +64,12 @@ class LinkedInService:
         ]
         return self.llm_service.chat_completion(messages)
 
-    def find_matching_contacts_for_call(self, contacts: List[Dict[str, Any]], call_data: Dict[str, Any], status_callback: Optional[Callable[[str], None]] = None) -> List[Dict[str, Any]]:
+    def find_matching_contacts_for_call(self, contacts: List[Dict[str, Any]], call_data: Dict[str, Any], status_callback: Optional[Callable[[str], None]] = None) -> Dict[str, Any]:
         """
         Uses the LLM to identify matching contacts for a given call from a list of contacts.
         """
         if not contacts:
-            return []
+            return {"matches": [], "identified_names": [], "criteria": ""}
 
         try:
             if status_callback:
@@ -75,13 +79,20 @@ class LinkedInService:
             contact_list_str = "\n".join([f"- {c.get('firstName')} {c.get('lastName')} (Headline: {c.get('occupation')})" for c in contacts])
 
             prompt = f"""
-            Identify the most relevant LinkedIn contacts from the list below for the following research call:
+            Identify the most relevant LinkedIn contacts from the list below for the following research call.
+            Also, provide a brief explanation of the criteria used for matching.
+
             Call: {json.dumps(call_data)}
 
             Contacts:
             {contact_list_str}
 
-            Return the names of the top 5 matching contacts as a list.
+            Please format your response exactly as follows:
+            Criteria: <Your explanation of the matching criteria>
+            Names:
+            - <First Name> <Last Name>
+            - <First Name> <Last Name>
+            ...
             """
 
             messages = [
@@ -90,8 +101,19 @@ class LinkedInService:
             ]
 
             response = self.llm_service.chat_completion(messages)
-            # Simplified matching for the purpose of the app
-            matched_names = [line.strip("- ").strip("12345. ") for line in response.splitlines() if line.strip()]
+
+            criteria = "No criteria provided."
+            matched_names = []
+
+            if "Criteria:" in response and "Names:" in response:
+                parts = response.split("Names:")
+                criteria_part = parts[0].replace("Criteria:", "").strip()
+                names_part = parts[1].strip()
+                criteria = criteria_part
+                matched_names = [line.strip("- ").strip() for line in names_part.splitlines() if line.strip()]
+            else:
+                # Fallback to previous logic if LLM didn't follow instructions perfectly
+                matched_names = [line.strip("- ").strip("12345. ") for line in response.splitlines() if line.strip()]
 
             if status_callback:
                 status_callback(f"LLM identified {len(matched_names)} potential matches. Filtering list...")
@@ -108,10 +130,14 @@ class LinkedInService:
                 status_callback(f"Found {len(matches)} matching contacts.")
             print(f"LinkedIn: Found {len(matches)} matching contacts.")
 
-            return matches
+            return {
+                "matches": matches,
+                "identified_names": matched_names,
+                "criteria": criteria
+            }
         except Exception as e:
             msg = f"Error during contact matching: {e}"
             if status_callback:
                 status_callback(msg)
             print(f"LinkedIn: {msg}")
-            return []
+            return {"matches": [], "identified_names": [], "criteria": ""}
