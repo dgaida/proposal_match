@@ -6,14 +6,36 @@ from app.utils.db_manager import DBManager, Company
 from app.utils.vector_store import VectorStore
 
 class MatchingService:
+    """Service for matching research calls with organizations in the database.
+
+    Attributes:
+        llm_service (LLMService): LLM service for analysis and generation.
+        db_manager (DBManager): Manager for SQLite database interactions.
+        vector_store (VectorStore): Manager for ChromaDB vector store.
+    """
+
     def __init__(self, llm_service: LLMService, db_manager: DBManager, vector_store: VectorStore):
+        """Initializes the MatchingService.
+
+        Args:
+            llm_service (LLMService): The LLM service for logic.
+            db_manager (DBManager): The database manager.
+            vector_store (VectorStore): The vector store manager.
+        """
         self.llm_service = llm_service
         self.db_manager = db_manager
         self.vector_store = vector_store
 
     def suggest_research_topics(self, call_data: Dict[str, Any], user_context: str = "", matched_companies: List[Dict[str, Any]] = []) -> List[str]:
-        """
-        Suggests potential research topics based on the call data, user context, and available companies.
+        """Suggests 5 project ideas for a research call and potential partners.
+
+        Args:
+            call_data (Dict[str, Any]): Data about the research call.
+            user_context (str): The background of the user.
+            matched_companies (List[Dict[str, Any]]): A list of companies that match the call.
+
+        Returns:
+            List[str]: A list of suggested research topics and roles.
         """
         companies_info = "\n".join([f"- {c['name']} (Industry: {c['industry']}): {c['summary']}" for c in matched_companies])
 
@@ -46,12 +68,18 @@ class MatchingService:
         return [line.strip("- ").strip("12345. ") for line in response.splitlines() if line.strip()]
 
     def generate_matching_query(self, call_data: Dict[str, Any]) -> str:
-        """
-        Generates a semantic search query based on the call data using the LLM.
+        """Generates an optimized semantic search query for matching companies.
+
+        Args:
+            call_data (Dict[str, Any]): Data about the research call.
+
+        Returns:
+            str: A multi-sentence query string for vector search.
         """
         prompt = f"""
-        Given the following research call, generate a concise semantic search query (1-2 sentences) that can be used to find matching companies in a vector database.
-        The query should focus on the technical requirements, research areas, and necessary expertise.
+        Given the following research call, generate a broad semantic search query (2-3 sentences) to find matching companies in a vector database.
+        The query should include not only the core technical requirements but also related technologies, broader application areas, and general expertise that might be relevant.
+        Aim for a query that is inclusive and captures a wide range of potentially interested organizations.
         RESPOND ONLY WITH THE QUERY STRING.
 
         Call: {json.dumps(call_data)}
@@ -63,8 +91,15 @@ class MatchingService:
         return self.llm_service.chat_completion(messages).strip('" \n')
 
     def hybrid_search(self, query: str, filters: Optional[Dict[str, Any]] = None, limit: int = 10) -> List[Dict[str, Any]]:
-        """
-        Performs a hybrid search: first filters by metadata in ChromaDB, then performs semantic search on the remaining items.
+        """Finds matching organizations using a hybrid vector-metadata search.
+
+        Args:
+            query (str): The semantic search query.
+            filters (Optional[Dict[str, Any]]): Filters for country, state, org type, etc.
+            limit (int): Maximum number of results to return.
+
+        Returns:
+            List[Dict[str, Any]]: A list of matching organization metadata.
         """
         # Step 1: Prepare ChromaDB filter
         where_filter = None
@@ -118,8 +153,14 @@ class MatchingService:
         return formatted_results
 
     def generate_match_justification(self, call_data: Dict[str, Any], matched_companies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """
-        Generates a justification for why each matched company fits the call.
+        """Generates a German justification for each matched organization.
+
+        Args:
+            call_data (Dict[str, Any]): Data about the research call.
+            matched_companies (List[Dict[str, Any]]): The list of matched organizations.
+
+        Returns:
+            List[Dict[str, Any]]: The original list of companies updated with a 'justification' field.
         """
         if not matched_companies:
             return []
@@ -146,9 +187,13 @@ class MatchingService:
         return results_with_justification
 
     def search_internet_for_companies(self, topic: str) -> List[Dict[str, str]]:
-        """
-        Searches the internet for companies matching the given topic.
-        Uses the LLM to generate optimized search queries.
+        """Searches the web for new companies matching a research topic.
+
+        Args:
+            topic (str): The target topic or sector for discovery.
+
+        Returns:
+            List[Dict[str, str]]: A list of discovered company URLs and snippets.
         """
         # Step 1: Generate optimized search queries using LLM
         query_prompt = f"""

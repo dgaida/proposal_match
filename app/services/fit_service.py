@@ -4,15 +4,37 @@ from typing import List, Dict, Any, Optional, Callable
 from app.services.llm_service import LLMService
 
 class FITService:
+    """Service for interacting with the FIT Uni Kassel research funding database.
+
+    Attributes:
+        base_url (str): The base URL for the FIT API.
+        llm_service (LLMService): The LLM service for filtering and summarizing.
+        auth_url (str): The URL for Keycloak authentication.
+        client (httpx.Client): The HTTP client for making API requests.
+    """
+
     def __init__(self, llm_service: LLMService, base_url: str = "https://fit.uni-kassel.de/api"):
+        """Initializes the FITService.
+
+        Args:
+            llm_service (LLMService): The LLM service for analysis.
+            base_url (str): The API base URL.
+        """
         self.base_url = base_url
         self.llm_service = llm_service
         self.auth_url = "https://fit.uni-kassel.de/auth"
         self.client = httpx.Client(timeout=30)
 
     def login(self, username: str, password: str, status_callback: Optional[Callable[[str], None]] = None) -> bool:
-        """
-        Authenticates with Keycloak to get a bearer token.
+        """Authenticates with Keycloak to obtain an access token.
+
+        Args:
+            username (str): The FIT username.
+            password (str): The FIT password.
+            status_callback (Optional[Callable[[str], None]]): Callback for status updates.
+
+        Returns:
+            bool: True if login is successful, False otherwise.
         """
         if status_callback:
             status_callback("Logging in to FIT Uni Kassel...")
@@ -38,8 +60,14 @@ class FITService:
             return False
 
     def search_calls(self, query: str, status_callback: Optional[Callable[[str], None]] = None) -> List[Dict[str, Any]]:
-        """
-        Searches for calls in the FIT database and filters for relevance using LLM.
+        """Searches for research calls on FIT and uses LLM for relevance filtering.
+
+        Args:
+            query (str): The search query.
+            status_callback (Optional[Callable[[str], None]]): Callback for status updates.
+
+        Returns:
+            List[Dict[str, Any]]: A list of relevant research call documents.
         """
         if status_callback:
             status_callback(f"Searching for '{query}' on FIT...")
@@ -67,8 +95,14 @@ class FITService:
             return []
 
     def _filter_relevant_calls(self, docs: List[Dict[str, Any]], query: str) -> List[Dict[str, Any]]:
-        """
-        Uses the LLM to filter and rank the fetched calls based on the original query.
+        """Filters a list of documents for relevance to a query using an LLM.
+
+        Args:
+            docs (List[Dict[str, Any]]): The list of documents to filter.
+            query (str): The original search query.
+
+        Returns:
+            List[Dict[str, Any]]: The filtered and ranked list of relevant documents.
         """
         # Prepare data for LLM
         simplified_docs = []
@@ -110,8 +144,14 @@ class FITService:
             return docs[:10]
 
     def summarize_results(self, results: List[Dict[str, Any]], status_callback: Optional[Callable[[str], None]] = None) -> str:
-        """
-        Summarizes the search results using the LLM.
+        """Generates a summary of research funding results using an LLM.
+
+        Args:
+            results (List[Dict[str, Any]]): The search results to summarize.
+            status_callback (Optional[Callable[[str], None]]): Callback for status updates.
+
+        Returns:
+            str: A formatted summary of the results in German.
         """
         if status_callback:
             status_callback("Summarizing results in German...")

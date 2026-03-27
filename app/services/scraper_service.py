@@ -3,12 +3,28 @@ from bs4 import BeautifulSoup
 from typing import Optional
 
 class ScraperService:
+    """Service for scraping and cleaning web content.
+
+    Attributes:
+        timeout (int): The HTTP request timeout in seconds.
+    """
+
     def __init__(self, timeout: int = 30):
+        """Initializes the ScraperService with a timeout.
+
+        Args:
+            timeout (int): The HTTP request timeout in seconds.
+        """
         self.timeout = timeout
 
     def fetch_page_content(self, url: str) -> Optional[dict]:
-        """
-        Fetches the content of a given URL and returns the text and final URL.
+        """Fetches the text content of a given URL and follows redirects.
+
+        Args:
+            url (str): The URL to fetch content from.
+
+        Returns:
+            Optional[dict]: A dictionary containing 'text' and 'final_url', or None on failure.
         """
         try:
             with httpx.Client(timeout=self.timeout, follow_redirects=True) as client:

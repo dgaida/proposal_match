@@ -8,16 +8,36 @@ from app.utils.db_manager import DBManager
 from app.utils.vector_store import VectorStore
 
 class IndexingService:
+    """Service for indexing company information from web links and local files.
+
+    Attributes:
+        llm_service (LLMService): LLM service for information extraction.
+        db_manager (DBManager): Manager for SQLite database storage.
+        vector_store (VectorStore): Manager for ChromaDB vector storage.
+        scraper_service (ScraperService): Service for web content scraping.
+    """
+
     def __init__(self, llm_service: LLMService, db_manager: DBManager, vector_store: VectorStore):
+        """Initializes the IndexingService.
+
+        Args:
+            llm_service (LLMService): The LLM service for analysis.
+            db_manager (DBManager): The database manager.
+            vector_store (VectorStore): The vector store manager.
+        """
         self.llm_service = llm_service
         self.db_manager = db_manager
         self.vector_store = vector_store
         self.scraper_service = ScraperService()
 
     def index_companies_from_links(self, links: List[str]) -> int:
-        """
-        Crawls the given links, extracts information, and stores it.
-        Returns the number of companies actually indexed.
+        """Processes and indexes a list of company website URLs.
+
+        Args:
+            links (List[str]): A list of URLs to index.
+
+        Returns:
+            int: The total count of newly indexed companies.
         """
         indexed_count = 0
         for link in links:
@@ -70,8 +90,14 @@ class IndexingService:
         return indexed_count
 
     def _extract_company_info(self, text: str, url: str) -> Optional[Dict[str, Any]]:
-        """
-        Extracts company information from the given text using the LLM.
+        """Extracts company metadata from text using LLM.
+
+        Args:
+            text (str): The scraped text content of the website.
+            url (str): The website URL.
+
+        Returns:
+            Optional[Dict[str, Any]]: Extracted metadata as a dictionary or None on failure.
         """
         prompt = f"""
         Extract the following information from the text for the organization website {url} in JSON format:
@@ -97,8 +123,15 @@ class IndexingService:
             return None
 
     def index_from_folder(self, folder_path: str, limit: int = 25, status_callback: Optional[Callable[[str], None]] = None) -> List[str]:
-        """
-        Recursively searches for .url files in the folder and indexes the URLs.
+        """Indexes company URLs found in .url files within a local directory.
+
+        Args:
+            folder_path (str): The directory path to scan.
+            limit (int): Maximum number of new companies to index.
+            status_callback (Optional[Callable[[str], None]]): Callback for status updates.
+
+        Returns:
+            List[str]: A list of URLs that were successfully indexed.
         """
         indexed_urls = []
         if not os.path.exists(folder_path):
@@ -133,8 +166,13 @@ class IndexingService:
         return indexed_urls
 
     def _extract_url_from_file(self, file_path: str) -> Optional[str]:
-        """
-        Extracts the URL from a .url file.
+        """Extracts the target URL from a Windows-style .url file.
+
+        Args:
+            file_path (str): The path to the .url file.
+
+        Returns:
+            Optional[str]: The extracted URL or None if not found.
         """
         try:
             with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
@@ -148,8 +186,13 @@ class IndexingService:
         return None
 
     def _parse_json(self, response: str) -> Optional[Dict[str, Any]]:
-        """
-        Attempts to parse the response from the LLM as a JSON object.
+        """Attempts to parse an LLM response as JSON.
+
+        Args:
+            response (str): Raw string from LLM.
+
+        Returns:
+            Optional[Dict[str, Any]]: Parsed JSON dictionary or None.
         """
         try:
             start_index = response.find("{")
