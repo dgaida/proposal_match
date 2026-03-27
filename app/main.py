@@ -702,7 +702,7 @@ with tab6:
                 selected_urls = [row.get("URL") for row in edited_data if isinstance(row, dict) and row.get("Select") and row.get("URL")]
             else: # Handle case if it's a DataFrame
                 try:
-                    selected_urls = edited_data[edited_data["Select"] == True]["URL"].tolist()
+                    selected_urls = edited_data[edited_data["Select"]]["URL"].tolist()
                 except Exception:
                     selected_urls = []
 
