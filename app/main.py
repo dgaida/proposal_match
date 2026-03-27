@@ -159,6 +159,8 @@ def parse_md_to_result(content):
             result['Antragsberechtigt'] = line.replace("- Antragsberechtigt: ", "").strip()
         elif line.startswith("- Antragsberechtigt_Details: "):
             result['Antragsberechtigt_Details'] = line.replace("- Antragsberechtigt_Details: ", "").strip()
+        elif line.startswith("- Sitz der Organisation: "):
+            result['Sitz_der_Organisation'] = line.replace("- Sitz der Organisation: ", "").strip()
 
     try:
         desc_start = content.find("Link:")
@@ -232,13 +234,14 @@ with tab1:
             st.write(f"**Thema:** {result.get('Thema')}")
             st.write(f"**Zielsetzung:** {result.get('Zielsetzung')}")
             st.write(f"**Deadline:** {result.get('Deadline')}")
-            st.write(f"**Link:** {result.get('Link')}")
+            st.write(f"**Sitz der Organisation:** {result.get('Sitz_der_Organisation', 'N/A')}")
         with col2:
             st.write(f"**Budget:** {result.get('Budget')}")
             st.write(f"**Laufzeit:** {result.get('Laufzeit')}")
             st.write(f"**Prozess:** {result.get('Einstufig_Zweistufig')}")
-            st.write(f"**Partner:** {result.get('Anzahl_Projektpartner')}")
+            st.write(f"**Link:** {result.get('Link')}")
 
+        st.write(f"**Partner:** {result.get('Anzahl_Projektpartner')}")
         st.write(f"**Antragsberechtigt:** {result.get('Antragsberechtigt', 'N/A')}")
         st.write(f"**Antragsberechtigt_Details:** {result.get('Antragsberechtigt_Details', 'N/A')}")
 
@@ -259,6 +262,7 @@ Link: {result.get('Link')}
 - Thema: {result.get('Thema')}
 - Zielsetzung: {result.get('Zielsetzung')}
 - Deadline: {result.get('Deadline')}
+- Sitz der Organisation: {result.get('Sitz_der_Organisation')}
 - Budget: {result.get('Budget')}
 - Laufzeit: {result.get('Laufzeit')}
 - Prozess: {result.get('Einstufig_Zweistufig')}
@@ -441,13 +445,37 @@ with tab4:
             countries = sorted(list({c.country for c in companies if c.country}))
             states = sorted(list({c.state for c in companies if c.state}))
 
-            country_filter = st.selectbox("Land filtern", ["Alle"] + countries, index=0, key="match_country_filter")
+            # Detection of German calls
+            is_german_call = current_call_data.get("Sitz_der_Organisation") == "Deutschland"
+
+            if is_german_call:
+                country_options = ["Deutschland"]
+                country_index = 0
+            else:
+                country_options = ["Alle"] + countries
+                country_index = 0
+
+            country_filter = st.selectbox("Land filtern", country_options, index=country_index, key="match_country_filter")
             state_filter = st.selectbox("Bundesland filtern", ["Alle"] + states, index=0, key="match_state_filter")
             org_type_filter = st.selectbox("Organisationsart filtern", ["Alle", "Unternehmen", "Forschungseinrichtung", "Hochschule", "KMU"], key="match_org_filter")
 
         if st.button("Find Matching Companies"):
             with st.spinner("Finding matches..."):
-                query = f"Organization working on {current_call_data.get('Thema')} and {current_call_data.get('Zielsetzung')}"
+                # Query generation and caching
+                queries_dir = "data/queries"
+                os.makedirs(queries_dir, exist_ok=True)
+                query_cache_path = os.path.join(queries_dir, f"{call_name}.txt")
+
+                if os.path.exists(query_cache_path):
+                    with open(query_cache_path, "r", encoding="utf-8") as f:
+                        query = f.read().strip()
+                else:
+                    query = matcher.generate_matching_query(current_call_data)
+                    with open(query_cache_path, "w", encoding="utf-8") as f:
+                        f.write(query)
+
+                st.info(f"Using generated semantic query: {query}")
+
                 filters = {}
                 if country_filter != "Alle":
                     filters["country"] = country_filter

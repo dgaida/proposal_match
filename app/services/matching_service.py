@@ -45,40 +45,58 @@ class MatchingService:
         # Simplified parsing for the suggestion list
         return [line.strip("- ").strip("12345. ") for line in response.splitlines() if line.strip()]
 
+    def generate_matching_query(self, call_data: Dict[str, Any]) -> str:
+        """
+        Generates a semantic search query based on the call data using the LLM.
+        """
+        prompt = f"""
+        Given the following research call, generate a concise semantic search query (1-2 sentences) that can be used to find matching companies in a vector database.
+        The query should focus on the technical requirements, research areas, and necessary expertise.
+        RESPOND ONLY WITH THE QUERY STRING.
+
+        Call: {json.dumps(call_data)}
+        """
+        messages = [
+            {"role": "system", "content": "You are an expert in research funding and technical matchmaking."},
+            {"role": "user", "content": prompt}
+        ]
+        return self.llm_service.chat_completion(messages).strip('" \n')
+
     def hybrid_search(self, query: str, filters: Optional[Dict[str, Any]] = None, limit: int = 10) -> List[Dict[str, Any]]:
         """
-        Performs a hybrid search combining semantic similarity (ChromaDB) and metadata filters (SQLite).
+        Performs a hybrid search: first filters by metadata in ChromaDB, then performs semantic search on the remaining items.
         """
-        # Step 1: Semantic search in ChromaDB - search more than the limit to allow for filtering
-        vector_results = self.vector_store.query_companies(query_text=query, n_results=50)
+        # Step 1: Prepare ChromaDB filter
+        where_filter = None
+        if filters:
+            conditions = []
+            if filters.get("state"):
+                conditions.append({"state": {"$eq": filters["state"]}})
+            if filters.get("country"):
+                conditions.append({"country": {"$eq": filters["country"]}})
+            if filters.get("org_type"):
+                conditions.append({"org_type": {"$eq": filters["org_type"]}})
+            if filters.get("kmu_status") is not None:
+                conditions.append({"kmu_status": {"$eq": filters["kmu_status"]}})
+
+            if len(conditions) == 1:
+                where_filter = conditions[0]
+            elif len(conditions) > 1:
+                where_filter = {"$and": conditions}
+
+        # Step 2: Semantic search in ChromaDB with pre-filtering
+        vector_results = self.vector_store.query_companies(query_text=query, n_results=limit, where=where_filter)
 
         # Extract the results from the vector store response
         company_ids = vector_results.get("ids", [[]])[0]
 
-        # Step 2: Fetch full metadata from SQLite and apply filters
+        # Step 3: Fetch full metadata from SQLite for the results
         session = self.db_manager.Session()
-        query_obj = session.query(Company).filter(Company.url.in_(company_ids))
-
-        if filters:
-            if filters.get("state"):
-                query_obj = query_obj.filter(Company.state == filters["state"])
-            if filters.get("industry"):
-                query_obj = query_obj.filter(Company.industry == filters["industry"])
-            if filters.get("kmu_status") is not None:
-                query_obj = query_obj.filter(Company.kmu_status == filters["kmu_status"])
-            if filters.get("country"):
-                query_obj = query_obj.filter(Company.country == filters["country"])
-            if filters.get("org_type"):
-                query_obj = query_obj.filter(Company.org_type == filters["org_type"])
-
-        results = query_obj.all()
+        results = session.query(Company).filter(Company.url.in_(company_ids)).all()
 
         # Maintain vector search order (relevance)
         id_to_result = {r.url: r for r in results}
-        sorted_results = [id_to_result[url] for url in company_ids if url in id_to_result]
-
-        # Limit the results
-        final_results = sorted_results[:limit]
+        final_results = [id_to_result[url] for url in company_ids if url in id_to_result]
 
         # Convert to dictionary for easy consumption
         formatted_results = []

@@ -1,6 +1,6 @@
 import os
 import chromadb
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 class VectorStore:
     def __init__(self, persist_directory: str = "data/chroma_db"):
@@ -19,11 +19,12 @@ class VectorStore:
             ids=[str(company_id)]
         )
 
-    def query_companies(self, query_text: str, n_results: int = 5) -> Dict[str, Any]:
+    def query_companies(self, query_text: str, n_results: int = 5, where: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Queries the vector store for similar companies.
         """
         return self.collection.query(
             query_texts=[query_text],
-            n_results=n_results
+            n_results=n_results,
+            where=where
         )
