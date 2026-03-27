@@ -3,9 +3,23 @@ from typing import List, Dict, Optional, Callable
 from llm_client import LLMClient
 
 class LLMService:
+    """Service for interacting with various LLM providers using the LLMClient library.
+
+    Attributes:
+        provider (str): The current LLM provider being used.
+        api_key (Optional[str]): The API key for the current provider.
+        llm_model (Optional[str]): The specific model name being used.
+        available_providers (Dict[str, str]): A dictionary of providers and their API keys.
+        client (LLMClient): The instance of the LLMClient used for API calls.
+    """
+
     def __init__(self, provider: str = "openai", api_key: Optional[str] = None, llm_model: Optional[str] = None):
-        """
-        Initializes the LLMClient with the given provider and API key.
+        """Initializes the LLMService with a provider, API key, and model.
+
+        Args:
+            provider (str): The LLM provider to use (e.g., 'openai', 'groq', 'gemini').
+            api_key (Optional[str]): The API key for the provider.
+            llm_model (Optional[str]): The specific model name to use.
         """
         self.provider = provider
         self.api_key = api_key
@@ -25,7 +39,13 @@ class LLMService:
 
         self.client = LLMClient(api_choice=provider, llm=llm_model, max_tokens=8192) if llm_model else LLMClient(api_choice=provider, max_tokens=8192)
 
-    def _set_env_key(self, provider: str, api_key: str):
+    def _set_env_key(self, provider: str, api_key: str) -> None:
+        """Sets the appropriate environment variable for the given provider.
+
+        Args:
+            provider (str): The LLM provider name.
+            api_key (str): The API key for the provider.
+        """
         if provider == "openai":
             os.environ["OPENAI_API_KEY"] = api_key
         elif provider == "groq":
@@ -34,14 +54,28 @@ class LLMService:
             os.environ["GEMINI_API_KEY"] = api_key
 
     def chat_completion(self, messages: List[Dict[str, str]]) -> str:
-        """
-        Sends a chat completion request to the LLM.
+        """Sends a chat completion request to the current LLM provider.
+
+        Args:
+            messages (List[Dict[str, str]]): A list of message dictionaries (role and content).
+
+        Returns:
+            str: The text response from the LLM.
         """
         return self.client.chat_completion(messages)
 
     def chat_with_fallback(self, messages: List[Dict[str, str]], status_callback: Optional[Callable[[str], None]] = None) -> str:
-        """
-        Sends a chat completion request with fallback to other providers if the primary one fails.
+        """Sends a chat completion request with fallback to other available providers on failure.
+
+        Args:
+            messages (List[Dict[str, str]]): A list of message dictionaries.
+            status_callback (Optional[Callable[[str], None]]): Optional callback for status updates.
+
+        Returns:
+            str: The text response from the LLM.
+
+        Raises:
+            Exception: If all available providers fail or no providers are configured.
         """
         # Start with the currently configured provider
         providers_to_try = [self.provider]
@@ -72,8 +106,15 @@ class LLMService:
         raise Exception("No LLM providers available.")
 
     def extract_structured_data(self, text: str, prompt: str, status_callback: Optional[Callable[[str], None]] = None) -> str:
-        """
-        Uses the LLM to extract structured data from the given text.
+        """Uses the LLM to extract structured information from the provided text.
+
+        Args:
+            text (str): The source text to extract data from.
+            prompt (str): The specific extraction instructions.
+            status_callback (Optional[Callable[[str], None]]): Optional callback for status updates.
+
+        Returns:
+            str: The extracted data, typically in JSON format as a string.
         """
         messages = [
             {"role": "system", "content": "You are an expert at extracting structured information from text. Always return valid JSON."},
@@ -81,9 +122,13 @@ class LLMService:
         ]
         return self.chat_with_fallback(messages, status_callback=status_callback)
 
-    def switch_config(self, provider: str, api_key: str, llm_model: Optional[str] = None):
-        """
-        Dynamically switches the LLM provider and API key.
+    def switch_config(self, provider: str, api_key: str, llm_model: Optional[str] = None) -> None:
+        """Dynamically switches the LLM provider, API key, and model.
+
+        Args:
+            provider (str): The new LLM provider name.
+            api_key (str): The new API key.
+            llm_model (Optional[str]): The new model name.
         """
         self.provider = provider
         self.api_key = api_key

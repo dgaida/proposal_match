@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import json
 import urllib.parse
+from typing import Optional, Dict, Any
 from dotenv import load_dotenv
 from app.services.llm_service import LLMService
 from app.services.scraper_service import ScraperService
@@ -35,7 +36,12 @@ if "user_context" not in st.session_state:
         st.session_state.user_context = ""
 
 # LLM Service Initialization
-def get_llm_service():
+def get_llm_service() -> Optional[LLMService]:
+    """Initializes the LLM service based on sidebar configuration.
+
+    Returns:
+        Optional[LLMService]: The initialized LLMService or None if config is missing.
+    """
     providers = ["openai", "groq", "gemini", "ollama"]
     env_provider = os.getenv("LLM_PROVIDER", "openai").lower()
     default_index = providers.index(env_provider) if env_provider in providers else 0
@@ -132,8 +138,15 @@ if "fit_results" not in st.session_state:
         st.session_state.fit_results = None
 
 # Utility functions
-def parse_md_to_result(content):
-    """Parses metadata from .md summaries for matching service compatibility."""
+def parse_md_to_result(content: str) -> Dict[str, Any]:
+    """Parses metadata from .md summaries for matching service compatibility.
+
+    Args:
+        content (str): The Markdown content of the summary.
+
+    Returns:
+        Dict[str, Any]: A dictionary containing extracted metadata.
+    """
     result = {}
     lines = content.split('\n')
     for line in lines:
@@ -397,169 +410,156 @@ with tab3:
 
 # Feature 4: Hybrid Search and Matching
 with tab4:
-    st.header("Match Companies to Calls")
+    st.header("Organisationen suchen & zuordnen")
 
-    # Matching Section
-    summaries_dir = "data/summaries"
-    os.makedirs(summaries_dir, exist_ok=True)
-    saved_calls = [f for f in os.listdir(summaries_dir) if f.endswith(".md")]
+    # Unified state for results
+    if "current_matches" not in st.session_state:
+        st.session_state.current_matches = []
+    if "current_topics" not in st.session_state:
+        st.session_state.current_topics = []
 
-    selected_call_file = st.selectbox("Wähle einen gespeicherten Call", saved_calls)
+    search_mode = st.radio(
+        "Suchmodus wählen",
+        ["Automatische Zuordnung (Call-basiert)", "Manuelle Hybrid-Suche"],
+        help="Wählen Sie 'Automatisch', um basierend auf einem Call zu suchen, oder 'Manuell', um einen eigenen Suchbegriff einzugeben."
+    )
 
-    # Persistent storage for matches and topics
-    matches_dir = "data/matches"
-    topics_dir = "data/topics"
-    os.makedirs(matches_dir, exist_ok=True)
-    os.makedirs(topics_dir, exist_ok=True)
+    matcher = MatchingService(llm_service, st.session_state.db_manager, st.session_state.vector_store)
+    current_call_data = None
+    call_name = "manual_search"
 
-    if selected_call_file:
-        call_name = selected_call_file.replace(".md", "")
-        matches_path = os.path.join(matches_dir, f"{call_name}.json")
-        topics_path = os.path.join(topics_dir, f"{call_name}.json")
+    if search_mode == "Automatische Zuordnung (Call-basiert)":
+        summaries_dir = "data/summaries"
+        os.makedirs(summaries_dir, exist_ok=True)
+        saved_calls = [f for f in os.listdir(summaries_dir) if f.endswith(".md")]
+        selected_call_file = st.selectbox("Wähle einen gespeicherten Call", saved_calls)
 
-        with open(os.path.join(summaries_dir, selected_call_file), "r", encoding="utf-8") as f:
-            current_call_data = parse_md_to_result(f.read())
+        if selected_call_file:
+            call_name = selected_call_file.replace(".md", "")
+            with open(os.path.join(summaries_dir, selected_call_file), "r", encoding="utf-8") as f:
+                current_call_data = parse_md_to_result(f.read())
+            st.info(f"Ausgewählter Call: **{current_call_data.get('Thema')}**")
+    else:
+        manual_query = st.text_input(
+            "Suchbegriff eingeben",
+            placeholder="z.B. KI im Maschinenbau",
+            help="Geben Sie technische Anforderungen oder Fachbereiche ein."
+        )
 
-        st.subheader(f"Matching für: {current_call_data.get('Thema')}")
+    st.subheader("Filter")
+    companies = st.session_state.db_manager.get_all_companies()
+    countries = sorted(list({c.country for c in companies if c.country}))
+    states = sorted(list({c.state for c in companies if c.state}))
 
-        matcher = MatchingService(llm_service, st.session_state.db_manager, st.session_state.vector_store)
+    col_f1, col_f2, col_f3 = st.columns(3)
+    with col_f1:
+        # Pre-select Deutschland if it's a German call
+        default_country_index = 0
+        if current_call_data and current_call_data.get("Sitz_der_Organisation") == "Deutschland":
+            if "Deutschland" in countries:
+                default_country_index = countries.index("Deutschland") + 1
 
-        # Load existing matches if they exist
-        if f"matches_{call_name}" not in st.session_state:
-            if os.path.exists(matches_path):
-                with open(matches_path, "r", encoding="utf-8") as f:
-                    st.session_state[f"matches_{call_name}"] = json.load(f)
-            else:
-                st.session_state[f"matches_{call_name}"] = None
+        country_filter = st.selectbox("Land filtern", ["Alle"] + countries, index=default_country_index, key="hybrid_country_filter")
+    with col_f2:
+        state_filter = st.selectbox("Bundesland filtern", ["Alle"] + states, index=0, key="hybrid_state_filter")
+    with col_f3:
+        org_type_filter = st.selectbox("Organisationsart filtern", ["Alle", "Unternehmen", "Forschungseinrichtung", "Hochschule", "KMU"], key="hybrid_org_filter")
 
-        if f"topics_{call_name}" not in st.session_state:
-            if os.path.exists(topics_path):
-                with open(topics_path, "r", encoding="utf-8") as f:
-                    st.session_state[f"topics_{call_name}"] = json.load(f)
-            else:
-                st.session_state[f"topics_{call_name}"] = None
+    col_btn1, col_btn2 = st.columns(2)
+    with col_btn1:
+        if st.button("Organisationen finden"):
+            with st.spinner("Suche läuft..."):
+                query = ""
+                if search_mode == "Automatische Zuordnung (Call-basiert)" and current_call_data:
+                    # Query generation and caching
+                    queries_dir = "data/queries"
+                    os.makedirs(queries_dir, exist_ok=True)
+                    query_cache_path = os.path.join(queries_dir, f"{call_name}.txt")
 
-        col_m1, col_m2 = st.columns(2)
-        with col_m1:
-            companies = st.session_state.db_manager.get_all_companies()
-            countries = sorted(list({c.country for c in companies if c.country}))
-            states = sorted(list({c.state for c in companies if c.state}))
-
-            # Detection of German calls
-            is_german_call = current_call_data.get("Sitz_der_Organisation") == "Deutschland"
-
-            if is_german_call:
-                country_options = ["Deutschland"]
-                country_index = 0
-            else:
-                country_options = ["Alle"] + countries
-                country_index = 0
-
-            country_filter = st.selectbox("Land filtern", country_options, index=country_index, key="match_country_filter")
-            state_filter = st.selectbox("Bundesland filtern", ["Alle"] + states, index=0, key="match_state_filter")
-            org_type_filter = st.selectbox("Organisationsart filtern", ["Alle", "Unternehmen", "Forschungseinrichtung", "Hochschule", "KMU"], key="match_org_filter")
-
-        if st.button("Find Matching Companies"):
-            with st.spinner("Finding matches..."):
-                # Query generation and caching
-                queries_dir = "data/queries"
-                os.makedirs(queries_dir, exist_ok=True)
-                query_cache_path = os.path.join(queries_dir, f"{call_name}.txt")
-
-                if os.path.exists(query_cache_path):
-                    with open(query_cache_path, "r", encoding="utf-8") as f:
-                        query = f.read().strip()
-                else:
-                    query = matcher.generate_matching_query(current_call_data)
-                    with open(query_cache_path, "w", encoding="utf-8") as f:
-                        f.write(query)
-
-                st.info(f"Using generated semantic query: {query}")
-
-                filters = {}
-                if country_filter != "Alle":
-                    filters["country"] = country_filter
-                if state_filter != "Alle":
-                    filters["state"] = state_filter
-                if org_type_filter != "Alle":
-                    if org_type_filter == "KMU":
-                        filters["org_type"] = "Unternehmen"
-                        filters["kmu_status"] = True
+                    if os.path.exists(query_cache_path):
+                        with open(query_cache_path, "r", encoding="utf-8") as f:
+                            query = f.read().strip()
                     else:
-                        filters["org_type"] = org_type_filter
+                        query = matcher.generate_matching_query(current_call_data)
+                        with open(query_cache_path, "w", encoding="utf-8") as f:
+                            f.write(query)
+                elif search_mode == "Manuelle Hybrid-Suche":
+                    query = manual_query
+                    if not current_call_data and query:
+                        current_call_data = {"Thema": query, "Beschreibung": f"Manuelle Suche nach: {query}"}
 
-                matches = matcher.hybrid_search(query, filters=filters, limit=10)
-                if matches:
-                    # Generate justifications
-                    matches = matcher.generate_match_justification(current_call_data, matches)
-                    st.session_state[f"matches_{call_name}"] = matches
-                    with open(matches_path, "w", encoding="utf-8") as f:
-                        json.dump(matches, f, ensure_ascii=False, indent=4)
-                else:
-                    st.session_state[f"matches_{call_name}"] = []
-                    st.warning("Keine passenden Organisationen in der Datenbank gefunden.")
+                if query:
+                    if search_mode == "Automatische Zuordnung (Call-basiert)":
+                        st.info(f"Generierte Suchanfrage: {query}")
 
-        if st.button("Suggest Research Topics"):
-            # Use already found matches for context if available
-            matched_companies = st.session_state.get(f"matches_{call_name}") or []
-
-            with st.spinner("Generating research topic suggestions..."):
-                topics = matcher.suggest_research_topics(
-                    current_call_data,
-                    user_context=st.session_state.get("user_context", ""),
-                    matched_companies=matched_companies
-                )
-                st.session_state[f"topics_{call_name}"] = topics
-                with open(topics_path, "w", encoding="utf-8") as f:
-                    json.dump(topics, f, ensure_ascii=False, indent=4)
-
-        # Display results
-        if st.session_state.get(f"matches_{call_name}"):
-            st.write("### Matching Organisations in Database:")
-            for m in st.session_state[f"matches_{call_name}"]:
-                with st.expander(f"**{m['name']}** - {m.get('industry', 'N/A')} ({m.get('country', 'N/A')})"):
-                    st.write(f"**Begründung:** {m.get('justification', 'Keine Begründung vorhanden.')}")
-                    st.write(f"**Zusammenfassung:** {m['summary']}")
-
-                    st.divider()
-                    col_info1, col_info2 = st.columns(2)
-                    with col_info1:
-                        url = m.get('url', 'N/A')
-                        if url != 'N/A':
-                            st.write(f"**Webseite:** [{url}]({url})")
+                    filters = {}
+                    if country_filter != "Alle":
+                        filters["country"] = country_filter
+                    if state_filter != "Alle":
+                        filters["state"] = state_filter
+                    if org_type_filter != "Alle":
+                        if org_type_filter == "KMU":
+                            filters["org_type"] = "Unternehmen"
+                            filters["kmu_status"] = True
                         else:
-                            st.write("**Webseite:** N/A")
-                        st.write(f"**Typ:** {m.get('org_type', 'N/A')}")
-                    with col_info2:
-                        st.write(f"**Mitarbeiter:** {m.get('employees_count', 'N/A')}")
-                        st.write(f"**KMU Status:** {'Ja' if m.get('kmu_status') else 'Nein'}")
+                            filters["org_type"] = org_type_filter
 
-        if st.session_state.get(f"topics_{call_name}"):
-            st.write("### Suggested Topics:")
-            for t in st.session_state[f"topics_{call_name}"]:
-                st.markdown(t)
+                    matches = matcher.hybrid_search(query, filters=filters, limit=10)
+                    if matches:
+                        if current_call_data:
+                            matches = matcher.generate_match_justification(current_call_data, matches)
+                        st.session_state.current_matches = matches
+                    else:
+                        st.session_state.current_matches = []
+                        st.warning("Keine passenden Organisationen in der Datenbank gefunden.")
+                else:
+                    st.warning("Bitte geben Sie einen Suchbegriff ein oder wählen Sie einen Call aus.")
 
-        st.divider()
+    with col_btn2:
+        if st.button("Forschungsthemen vorschlagen"):
+            if not current_call_data and search_mode == "Manuelle Hybrid-Suche":
+                # Create a minimal call data from manual query if no call selected
+                current_call_data = {"Thema": manual_query, "Beschreibung": f"Manuelle Suche nach: {manual_query}"}
 
-    # Manual Search Section
-    st.subheader("Manual Hybrid Search")
-    search_query = st.text_input(
-        "Enter search query (e.g. 'AI and Robotics')",
-        placeholder="Machine Learning in Health",
-        help="Search for companies in your database using semantic and keyword matching."
-    )
-    state_filter = st.text_input(
-        "State Filter (Optional)",
-        placeholder="Hessen",
-        help="Filter results by German federal state (e.g., Hessen, Bayern)."
-    )
-    if st.button("Search Database"):
-        matcher = MatchingService(llm_service, st.session_state.db_manager, st.session_state.vector_store)
-        filters = {"state": state_filter} if state_filter else None
-        results = matcher.hybrid_search(search_query, filters=filters)
-        for r in results:
-            st.info(f"**{r['name']}** ({r['state']})")
-            st.write(r['summary'])
+            if current_call_data:
+                with st.spinner("Generiere Vorschläge..."):
+                    topics = matcher.suggest_research_topics(
+                        current_call_data,
+                        user_context=st.session_state.get("user_context", ""),
+                        matched_companies=st.session_state.current_matches
+                    )
+                    st.session_state.current_topics = topics
+            else:
+                st.warning("Bitte wählen Sie einen Call aus oder geben Sie einen Suchbegriff für den Kontext an.")
+
+    # Unified Display
+    if st.session_state.current_matches:
+        st.write("### Gefundene Organisationen:")
+        for m in st.session_state.current_matches:
+            with st.expander(f"**{m['name']}** - {m.get('industry', 'N/A')} ({m.get('country', 'N/A')})"):
+                if m.get('justification'):
+                    st.write(f"**Begründung:** {m['justification']}")
+                st.write(f"**Zusammenfassung:** {m['summary']}")
+
+                st.divider()
+                col_info1, col_info2 = st.columns(2)
+                with col_info1:
+                    url = m.get('url', 'N/A')
+                    if url != 'N/A':
+                        st.write(f"**Webseite:** [{url}]({url})")
+                    else:
+                        st.write("**Webseite:** N/A")
+                    st.write(f"**Typ:** {m.get('org_type', 'N/A')}")
+                with col_info2:
+                    st.write(f"**Mitarbeiter:** {m.get('employees_count', 'N/A')}")
+                    st.write(f"**KMU Status:** {'Ja' if m.get('kmu_status') else 'Nein'}")
+
+    if st.session_state.current_topics:
+        st.write("### Vorschläge für Forschungsthemen:")
+        for t in st.session_state.current_topics:
+            st.markdown(t)
+
+    st.divider()
 
     # Internet Discovery Section
     st.subheader("Discover New Companies on the Internet")

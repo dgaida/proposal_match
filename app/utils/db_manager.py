@@ -6,6 +6,23 @@ from typing import List, Dict, Any
 Base = declarative_base()
 
 class Company(Base):
+    """SQLAlchemy model representing a company/organization.
+
+    Attributes:
+        id (int): Primary key.
+        name (str): The name of the organization.
+        url (str): The unique website URL.
+        state (str): Federal state.
+        city (str): City.
+        employees_count (int): Approximate number of employees.
+        kmu_status (bool): SME status.
+        industry (str): Industrial sector.
+        country (str): Country.
+        org_type (str): Type (e.g., SME, Research).
+        research_active (bool): Whether they do research.
+        summary (str): Textual description.
+        products (str): Description of products/services.
+    """
     __tablename__ = 'companies'
     id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=True)
@@ -22,7 +39,19 @@ class Company(Base):
     products = Column(Text)
 
 class DBManager:
+    """Manages SQLite database operations for companies using SQLAlchemy.
+
+    Attributes:
+        engine: SQLAlchemy engine.
+        Session: sessionmaker instance.
+    """
+
     def __init__(self, db_url: str = "sqlite:///data/companies.db"):
+        """Initializes the database connection and ensures schema exists.
+
+        Args:
+            db_url (str): The database connection string.
+        """
         # Ensure data directory exists
         os.makedirs("data", exist_ok=True)
         self.engine = create_engine(db_url)
@@ -30,11 +59,8 @@ class DBManager:
         self._ensure_columns_exist()
         self.Session = sessionmaker(bind=self.engine)
 
-    def _ensure_columns_exist(self):
-        """
-        Ensures that all columns defined in the model exist in the database.
-        This handles migrations for existing databases.
-        """
+    def _ensure_columns_exist(self) -> None:
+        """Ensures that all model columns exist in the DB (handles migrations)."""
         from sqlalchemy import inspect, text
         inspector = inspect(self.engine)
         if 'companies' in inspector.get_table_names():
@@ -48,9 +74,11 @@ class DBManager:
                     conn.execute(text("ALTER TABLE companies ADD COLUMN org_type VARCHAR(100)"))
                     conn.commit()
 
-    def add_company(self, company_data: Dict[str, Any]):
-        """
-        Adds a new company to the database or updates it if the URL already exists.
+    def add_company(self, company_data: Dict[str, Any]) -> None:
+        """Adds a new company or updates an existing one by URL.
+
+        Args:
+            company_data (Dict[str, Any]): Dictionary of company metadata.
         """
         session = self.Session()
         company_data_copy = company_data.copy()
@@ -88,17 +116,21 @@ class DBManager:
             session.close()
 
     def get_all_companies(self) -> List[Company]:
-        """
-        Retrieves all companies from the database.
+        """Retrieves all company records from the database.
+
+        Returns:
+            List[Company]: List of SQLAlchemy Company objects.
         """
         session = self.Session()
         companies = session.query(Company).all()
         session.close()
         return companies
 
-    def deduplicate_companies(self):
-        """
-        Identifies and removes duplicate entries based on normalized URLs.
+    def deduplicate_companies(self) -> int:
+        """Removes duplicate company entries based on normalized URLs.
+
+        Returns:
+            int: The number of duplicates removed.
         """
         session = self.Session()
         try:
@@ -128,8 +160,13 @@ class DBManager:
             session.close()
 
     def is_url_indexed(self, url: str) -> bool:
-        """
-        Checks if a URL (or its normalized version) is already in the database.
+        """Checks if a URL has already been indexed in the database.
+
+        Args:
+            url (str): The URL to check.
+
+        Returns:
+            bool: True if it exists, False otherwise.
         """
         if not url:
             return False
@@ -144,9 +181,11 @@ class DBManager:
         session.close()
         return exists
 
-    def update_companies(self, updated_data: List[Dict[str, Any]]):
-        """
-        Batch updates companies in the database.
+    def update_companies(self, updated_data: List[Dict[str, Any]]) -> None:
+        """Performs a batch update of company records.
+
+        Args:
+            updated_data (List[Dict[str, Any]]): List of company data dicts (must include 'url').
         """
         session = self.Session()
         try:

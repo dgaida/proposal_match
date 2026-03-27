@@ -3,12 +3,33 @@ from typing import Dict, Any, Optional, Callable
 from app.services.llm_service import LLMService
 
 class AnalyzerService:
+    """Service for analyzing research call text and extracting structured metadata.
+
+    Attributes:
+        llm_service (LLMService): The LLM service used for extraction.
+    """
+
     def __init__(self, llm_service: LLMService):
+        """Initializes the AnalyzerService.
+
+        Args:
+            llm_service (LLMService): The LLM service to use.
+        """
         self.llm_service = llm_service
 
     def analyze_research_call(self, text: str, url: Optional[str] = None, status_callback: Optional[Callable[[str], None]] = None) -> Optional[Dict[str, Any]]:
-        """
-        Analyzes the research call text and extracts key information using the LLM.
+        """Analyzes a research call using LLM to extract key details.
+
+        Args:
+            text (str): The text content of the research call.
+            url (Optional[str]): The source URL of the call.
+            status_callback (Optional[Callable[[str], None]]): Callback for status updates.
+
+        Returns:
+            Optional[Dict[str, Any]]: A dictionary with extracted call details or None if extraction fails.
+
+        Raises:
+            Exception: Propagates exceptions from the LLM service.
         """
         prompt = f"""
         Analyze the research call {f'from the URL {url}' if url else ''} and extract the following information in JSON format:
@@ -43,8 +64,13 @@ class AnalyzerService:
             raise e
 
     def _parse_json(self, response: str) -> Optional[Dict[str, Any]]:
-        """
-        Attempts to parse the response from the LLM as a JSON object.
+        """Attempts to parse an LLM response as JSON.
+
+        Args:
+            response (str): The raw text response from the LLM.
+
+        Returns:
+            Optional[Dict[str, Any]]: The parsed JSON data or None if parsing fails.
         """
         try:
             # Basic cleanup in case of extra text

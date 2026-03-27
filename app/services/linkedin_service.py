@@ -4,7 +4,21 @@ from linkedin_api import Linkedin
 from app.services.llm_service import LLMService
 
 class LinkedInService:
+    """Service for LinkedIn integration and contact matching.
+
+    Attributes:
+        llm_service (LLMService): LLM service for analysis and generation.
+        api (Optional[Linkedin]): LinkedIn API instance or None if not initialized.
+    """
+
     def __init__(self, llm_service: LLMService, username: Optional[str] = None, password: Optional[str] = None):
+        """Initializes the LinkedInService.
+
+        Args:
+            llm_service (LLMService): The LLM service for logic.
+            username (Optional[str]): LinkedIn account username.
+            password (Optional[str]): LinkedIn account password.
+        """
         self.llm_service = llm_service
         self.api = None
         if username and password:
@@ -14,8 +28,14 @@ class LinkedInService:
                 print(f"Failed to initialize LinkedIn API: {e}")
 
     def get_first_degree_contacts(self, limit: int = -1, status_callback: Optional[Callable[[str], None]] = None) -> List[Dict[str, Any]]:
-        """
-        Fetches 1st-degree contacts from LinkedIn.
+        """Fetches 1st-degree contacts from the LinkedIn account.
+
+        Args:
+            limit (int): Maximum number of contacts to fetch. Defaults to -1 (no limit).
+            status_callback (Optional[Callable[[str], None]]): Callback for status updates.
+
+        Returns:
+            List[Dict[str, Any]]: A list of contact dictionaries.
         """
         if not self.api:
             if status_callback:
@@ -47,8 +67,15 @@ class LinkedInService:
             return []
 
     def generate_outreach_message(self, contact_name: str, company_name: str, call_data: Dict[str, Any]) -> str:
-        """
-        Generates a personalized outreach message using the LLM.
+        """Generates a professional outreach message via LLM.
+
+        Args:
+            contact_name (str): Full name of the contact.
+            company_name (str): The organization they are associated with.
+            call_data (Dict[str, Any]): Data about the research call for context.
+
+        Returns:
+            str: The generated outreach text.
         """
         prompt = f"""
         Generate a professional and personalized LinkedIn outreach message for my contact {contact_name}
@@ -65,8 +92,15 @@ class LinkedInService:
         return self.llm_service.chat_completion(messages)
 
     def find_matching_contacts_for_call(self, contacts: List[Dict[str, Any]], call_data: Dict[str, Any], status_callback: Optional[Callable[[str], None]] = None) -> Dict[str, Any]:
-        """
-        Uses the LLM to identify matching contacts for a given call from a list of contacts.
+        """Analyzes a list of LinkedIn contacts to find matches for a research call.
+
+        Args:
+            contacts (List[Dict[str, Any]]): The list of LinkedIn contacts to analyze.
+            call_data (Dict[str, Any]): The research call details.
+            status_callback (Optional[Callable[[str], None]]): Callback for status updates.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing 'matches' (objects), 'identified_names', and 'criteria'.
         """
         if not contacts:
             return {"matches": [], "identified_names": [], "criteria": ""}
