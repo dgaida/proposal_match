@@ -15,6 +15,7 @@ class AnalyzerService:
         - Thema: The research topic.
         - Zielsetzung: The primary goal or objective.
         - Deadline: The application deadline.
+        - Sitz_der_Organisation: The location/seat of the organization or the call issuer (e.g., "Deutschland", "Europa", "International").
         - Einstufig_Zweistufig: Is it a 1-step or 2-step process?
         - Anzahl_Projektpartner: Required or suggested number of project partners.
         - Budget: Estimated or maximum budget for the call.
