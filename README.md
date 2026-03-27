@@ -18,6 +18,7 @@ A comprehensive tool to analyze research calls, find funding opportunities, and 
 4.  **Hybrid Matching**: Match indexed companies to specific research calls using a combination of SQL filtering and semantic vector search (ChromaDB).
 5.  **External Discovery**: Search the internet for new potential partners and index them with one click.
 6.  **LinkedIn Integration**: Fetch 1st-degree LinkedIn contacts, match them to research calls, and generate personalized outreach messages.
+7.  **Configurable Limits**: Set custom limits for LinkedIn contact retrieval and recursive folder indexing to optimize performance.
 
 ## Installation
 
