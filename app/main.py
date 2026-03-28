@@ -502,6 +502,8 @@ with tab4:
         st.session_state.current_topics = []
     if "last_queries" not in st.session_state:
         st.session_state.last_queries = []
+    if "current_proposals" not in st.session_state:
+        st.session_state.current_proposals = []
 
     search_mode = st.radio(
         translate("search_mode", st.session_state.lang),
@@ -524,6 +526,17 @@ with tab4:
             with open(os.path.join(summaries_dir, selected_call_file), "r", encoding="utf-8") as f:
                 current_call_data = parse_md_to_result(f.read())
             st.info(f"{translate('active_call', st.session_state.lang)} **{current_call_data.get('Thema')}**")
+
+            # Load cached proposals if they exist
+            proposals_dir = "data/proposals"
+            os.makedirs(proposals_dir, exist_ok=True)
+            proposal_cache_path = os.path.join(proposals_dir, f"{call_name}_proposals.json")
+            if os.path.exists(proposal_cache_path) and not st.session_state.current_proposals:
+                try:
+                    with open(proposal_cache_path, "r", encoding="utf-8") as f:
+                        st.session_state.current_proposals = json.load(f)
+                except Exception:
+                    pass
     else:
         manual_query = st.text_input(
             translate("search_query_label", st.session_state.lang),
@@ -623,13 +636,24 @@ with tab4:
                 current_call_data = {"Thema": manual_query, "Beschreibung": f"Manuelle Suche nach: {manual_query}"}
 
             if current_call_data:
-                with st.spinner(translate("generating_suggestions", st.session_state.lang)):
-                    topics = matcher.suggest_research_topics(
+                with st.status(translate("generating_suggestions", st.session_state.lang)) as status:
+                    proposals = matcher.generate_detailed_proposals(
                         current_call_data,
                         user_context=st.session_state.get("user_context", ""),
-                        matched_companies=st.session_state.current_matches
+                        matched_companies=st.session_state.current_matches,
+                        status_callback=lambda msg: status.update(label=msg)
                     )
-                    st.session_state.current_topics = topics
+                    st.session_state.current_proposals = proposals
+
+                    # Cache the proposals
+                    if search_mode == translate("auto_matching", st.session_state.lang):
+                        proposals_dir = "data/proposals"
+                        os.makedirs(proposals_dir, exist_ok=True)
+                        proposal_cache_path = os.path.join(proposals_dir, f"{call_name}_proposals.json")
+                        with open(proposal_cache_path, "w", encoding="utf-8") as f:
+                            json.dump(proposals, f, ensure_ascii=False, indent=4)
+
+                    status.update(label="Vorschläge generiert!", state="complete")
             else:
                 st.warning("Bitte wählen Sie einen Call aus oder geben Sie einen Suchbegriff für den Kontext an.")
 
@@ -662,8 +686,31 @@ with tab4:
                     st.write(f"**{translate('employees', st.session_state.lang)}:** {m.get('employees_count', 'N/A')}")
                     st.write(f"**{translate('sme_status', st.session_state.lang)}:** {'Ja' if m.get('kmu_status') else 'Nein'}")
 
-    if st.session_state.current_topics:
-        st.write("### Vorschläge für Forschungsthemen:")
+    if st.session_state.current_proposals:
+        st.write(f"### {translate('suggested_research_topics', st.session_state.lang)}")
+        for prop in st.session_state.current_proposals:
+            with st.expander(f"**{prop.get('title')}**"):
+                st.write(prop.get('description'))
+
+                st.write(f"#### {translate('existing_partners', st.session_state.lang)}")
+                for p in prop.get('existing_partners', []):
+                    st.write(f"- **{p['name']}**: {p['role']}")
+
+                if prop.get('newly_found_partners'):
+                    st.write(f"#### {translate('newly_found_partners', st.session_state.lang)}")
+                    for p in prop.get('newly_found_partners', []):
+                        relevance_pct = f"{int(p.get('relevance', 0) * 100)}%"
+                        st.write(f"- **{p['name']}** ({p.get('city')}, {p.get('org_type')}) - Relevance: {relevance_pct}")
+                        st.write(f"  *Rolle: {p.get('project_role')}*")
+                        st.info(p.get('summary'))
+
+                if prop.get('missing_partners_search'):
+                    st.write(f"#### {translate('missing_partners', st.session_state.lang)}")
+                    for mp in prop.get('missing_partners_search', []):
+                        st.write(f"- {mp.get('type_description')} (*{mp.get('intended_role')}*)")
+
+    elif st.session_state.current_topics:
+        st.write(f"### {translate('suggested_research_topics', st.session_state.lang)}")
         for t in st.session_state.current_topics:
             st.markdown(t)
 

@@ -1,5 +1,5 @@
 import json
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Callable
 from ddgs import DDGS
 from app.services.llm_service import LLMService
 from app.utils.db_manager import DBManager, Company
@@ -115,12 +115,13 @@ class MatchingService:
         ]
         return self.llm_service.chat_completion(messages).strip('" \n')
 
-    def hybrid_search(self, query: str, filters: Optional[Dict[str, Any]] = None, limit: int = 10) -> List[Dict[str, Any]]:
+    def hybrid_search(self, query: str, filters: Optional[Dict[str, Any]] = None, keywords: Optional[str] = None, limit: int = 10) -> List[Dict[str, Any]]:
         """Finds matching organizations using a hybrid vector-metadata search.
 
         Args:
             query (str): The semantic search query.
             filters (Optional[Dict[str, Any]]): Filters for country, state, org type, etc.
+            keywords (Optional[str]): Keywords for document-level filtering.
             limit (int): Maximum number of results to return.
 
         Returns:
@@ -144,8 +145,13 @@ class MatchingService:
             elif len(conditions) > 1:
                 where_filter = {"$and": conditions}
 
+        # Prepare keyword filter
+        where_doc = None
+        if keywords:
+            where_doc = {"$contains": keywords}
+
         # Step 2: Semantic search in ChromaDB with pre-filtering
-        vector_results = self.vector_store.query_companies(query_text=query, n_results=limit, where=where_filter)
+        vector_results = self.vector_store.query_companies(query_text=query, n_results=limit, where=where_filter, where_document=where_doc)
 
         # Extract the results from the vector store response
         # Normalize IDs (strip trailing slashes) to ensure match with SQLite
@@ -193,6 +199,118 @@ class MatchingService:
 
         session.close()
         return final_results
+
+    def generate_detailed_proposals(self, call_data: Dict[str, Any], user_context: str = "", matched_companies: List[Dict[str, Any]] = [], status_callback: Optional[Callable[[str], None]] = None) -> List[Dict[str, Any]]:
+        """Generates 5 detailed project proposals with missing partner discovery.
+
+        Args:
+            call_data (Dict[str, Any]): Data about the research call.
+            user_context (str): The background of the user.
+            matched_companies (List[Dict[str, Any]]): A list of companies that already match the call.
+            status_callback (Optional[Callable[[str], None]]): Callback for status updates.
+
+        Returns:
+            List[Dict[str, Any]]: A list of detailed project proposals.
+        """
+        if status_callback:
+            status_callback("Generiere Projektideen und Suchanfragen für fehlende Partner...")
+
+        companies_info = "\n".join([f"- {c['name']} (Branche: {c['industry']}): {c['summary']}" for c in matched_companies])
+
+        prompt = f"""
+        Basierend auf dem folgenden Forschungs-Call und dem Profil des Nutzers, erstelle 5 konkrete Projektideen (Vorschläge).
+        Berücksichtige dabei die bereits vorhandenen Partner aus der Datenbank.
+
+        Nutzer-Profil:
+        {user_context}
+
+        Call-Daten:
+        {json.dumps(call_data)}
+
+        Bereits gefundene Partner aus der Datenbank:
+        {companies_info}
+
+        Erstelle für jede der 5 Projektideen ein JSON-Objekt mit folgendem Aufbau:
+        {{
+            "title": "Titel des Projekts",
+            "description": "Detaillierte Projektbeschreibung auf Deutsch (ca. 100-200 Wörter).",
+            "existing_partners": [
+                {{
+                    "name": "Name des Unternehmens",
+                    "role": "Spezifische Rolle dieses Partners in diesem Projekt"
+                }}
+            ],
+            "missing_partners_search": [
+                {{
+                    "type_description": "Beschreibung des benötigten Partners (z.B. KMU für Sensorik)",
+                    "filters": {{
+                        "country": "Deutschland",
+                        "org_type": "Unternehmen",
+                        "kmu_status": true
+                    }},
+                    "queries": ["Semantische Suchanfrage 1", "Semantische Suchanfrage 2"],
+                    "keywords": "Stichwort für die Suche",
+                    "intended_role": "Geplante Rolle für diesen Partner im Projekt"
+                }}
+            ]
+        }}
+
+        WICHTIG:
+        - Wenn ein KMU benötigt wird, setze kmu_status: true und org_type: "Unternehmen".
+        - Wenn ein allgemeines Unternehmen benötigt wird, setze kmu_status: false (oder lass es weg) und org_type: "Unternehmen".
+        - Erstelle bis zu 5 Suchanfragen insgesamt pro Projektidee für fehlende Partner.
+        - Antworte ausschließlich mit einer JSON-Liste dieser 5 Objekte.
+        """
+
+        messages = [
+            {"role": "system", "content": "Du bist ein Experte für Forschungsförderung und Konsortialbildung. Du antwortest nur in validem JSON."},
+            {"role": "user", "content": prompt}
+        ]
+
+        response = self.llm_service.chat_completion(messages)
+        try:
+            # Clean up potential markdown blocks
+            clean_response = response.strip()
+            if clean_response.startswith("```json"):
+                clean_response = clean_response[7:]
+            if clean_response.endswith("```"):
+                clean_response = clean_response[:-3]
+
+            proposals = json.loads(clean_response)
+        except Exception as e:
+            print(f"Failed to parse proposals JSON: {e}")
+            print(f"Raw response: {response}")
+            return []
+
+        final_proposals = []
+        for i, prop in enumerate(proposals):
+            if status_callback:
+                status_callback(f"Suche Partner für Projekt {i+1}/5: {prop.get('title')}...")
+
+            found_partners_for_prop = []
+            seen_urls = set()
+
+            for missing_search in prop.get("missing_partners_search", []):
+                filters = missing_search.get("filters", {})
+                queries = missing_search.get("queries", [])
+                keywords = missing_search.get("keywords")
+                intended_role = missing_search.get("intended_role")
+
+                for q in queries:
+                    # Search for 3 companies per query as requested
+                    matches = self.hybrid_search(q, filters=filters, keywords=keywords, limit=3)
+                    for m in matches:
+                        if m['url'] not in seen_urls:
+                            m['project_role'] = intended_role
+                            found_partners_for_prop.append(m)
+                            seen_urls.add(m['url'])
+
+            # Sort found partners by relevance
+            found_partners_for_prop.sort(key=lambda x: x.get('relevance', 0), reverse=True)
+            prop['newly_found_partners'] = found_partners_for_prop
+            final_proposals.append(prop)
+
+        return final_proposals
 
     def generate_match_justification(self, call_data: Dict[str, Any], matched_companies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Generates a German justification for each matched organization.

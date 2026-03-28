@@ -35,13 +35,14 @@ class VectorStore:
             ids=[str(company_id)]
         )
 
-    def query_companies(self, query_text: str, n_results: int = 5, where: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def query_companies(self, query_text: str, n_results: int = 5, where: Optional[Dict[str, Any]] = None, where_document: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Queries the vector store for similar companies using semantic search.
 
         Args:
             query_text (str): The search query text.
             n_results (int): Number of results to return.
             where (Optional[Dict[str, Any]]): Metadata filters for the search.
+            where_document (Optional[Dict[str, Any]]): Document/keyword filters (e.g., {"$contains": "AI"}).
 
         Returns:
             Dict[str, Any]: Results from ChromaDB including ids, documents, and metadatas.
@@ -49,5 +50,6 @@ class VectorStore:
         return self.collection.query(
             query_texts=[query_text],
             n_results=n_results,
-            where=where
+            where=where,
+            where_document=where_document
         )
