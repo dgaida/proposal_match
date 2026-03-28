@@ -17,7 +17,9 @@ dependencies = [
     "python-dotenv",
     "ddgs",
     "linkedin_api",
-    "pydantic-settings"
+    "pydantic-settings",
+    "geopy",
+    "pydeck"
 ]
 requires-python = ">=3.10"
 

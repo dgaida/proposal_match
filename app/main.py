@@ -2,6 +2,8 @@ import streamlit as st
 import os
 import json
 import urllib.parse
+import pandas as pd
+import pydeck as pdk
 from typing import Optional, Dict, Any
 from dotenv import load_dotenv
 from app.services.llm_service import LLMService
@@ -15,6 +17,7 @@ from app.utils.db_manager import DBManager
 from app.utils.vector_store import VectorStore
 from app.utils.translations import translate
 from app.utils.file_utils import get_file_age_days
+from app.utils.geo_utils import get_coordinates
 
 # Load credentials from secrets.env if it exists
 load_dotenv("secrets.env")
@@ -418,16 +421,16 @@ with tab2:
 # Feature 3: Company Indexing
 with tab3:
     st.header(translate("company_indexing_title", st.session_state.lang))
-    st.write("Upload a file with company hyperlinks (one per line) or enter them manually.")
+    st.write(translate("company_indexing_desc", st.session_state.lang))
     company_links_input = st.text_area(
-        "Enter Company Links (one per line)",
+        translate("enter_company_links", st.session_state.lang),
         placeholder="https://company-a.com\nhttps://company-b.de",
-        help="Enter one or more company website URLs to index."
+        help=translate("company_links_help", st.session_state.lang)
     )
     uploaded_file = st.file_uploader(
-        "Or upload a text file with links",
+        translate("upload_links_file", st.session_state.lang),
         type=["txt"],
-        help="Upload a plain text file containing one URL per line."
+        help=translate("upload_links_help", st.session_state.lang)
     )
 
     if st.button(translate("index_companies_button", st.session_state.lang)):
@@ -442,34 +445,34 @@ with tab3:
             indexer = IndexingService(llm_service, st.session_state.db_manager, st.session_state.vector_store)
             progress_bar = st.progress(0)
             for i, link in enumerate(links):
-                with st.status(f"Indexing {link}..."):
+                with st.status(translate("indexing_status", st.session_state.lang, link=link)):
                     indexer.index_companies_from_links([link])
                 progress_bar.progress((i + 1) / len(links))
-            st.success("Indexing Complete!")
+            st.success(translate("indexing_complete", st.session_state.lang))
         else:
-            st.warning("Please provide links to index.")
+            st.warning(translate("provide_links_warning", st.session_state.lang))
 
     st.divider()
     st.write(f"### {translate('recursive_folder_indexing', st.session_state.lang)}")
     folder_path = st.text_input(
-        "Enter Folder Path containing .url files",
+        translate("enter_folder_path", st.session_state.lang),
         placeholder="/path/to/your/links/folder",
-        help="Provide a local folder path to recursively search for and index .url files."
+        help=translate("folder_path_help", st.session_state.lang)
     )
-    folder_limit = st.number_input("Limit für Ordner-Indexierung", min_value=1, value=25, step=1, help="Maximale Anzahl neuer Unternehmen, die aus dem Ordner indexiert werden sollen.")
+    folder_limit = st.number_input(translate("folder_indexing_limit", st.session_state.lang), min_value=1, value=25, step=1, help=translate("folder_limit_help", st.session_state.lang))
     if st.button(translate("index_from_folder_button", st.session_state.lang)):
         if folder_path and os.path.exists(folder_path):
             indexer = IndexingService(llm_service, st.session_state.db_manager, st.session_state.vector_store)
-            with st.status(f"Scanning {folder_path}...") as status:
+            with st.status(translate("scanning_folder", st.session_state.lang, path=folder_path)) as status:
                 indexed = indexer.index_from_folder(folder_path, limit=folder_limit, status_callback=lambda msg: status.update(label=msg))
-                status.update(label=f"Indexed {len(indexed)} URLs from folder.", state="complete")
+                status.update(label=translate("folder_indexed_count", st.session_state.lang, count=len(indexed)), state="complete")
             st.success(f"Successfully indexed {len(indexed)} companies from folder.")
             if indexed:
                 with st.expander("Show indexed companies/URLs"):
                     for url in indexed:
                         st.write(f"- {url}")
         else:
-            st.error("Invalid or empty folder path.")
+            st.error(translate("invalid_folder", st.session_state.lang))
 
 # Feature 4: Hybrid Search and Matching
 with tab4:
@@ -486,7 +489,7 @@ with tab4:
     search_mode = st.radio(
         translate("search_mode", st.session_state.lang),
         [translate("auto_matching", st.session_state.lang), translate("manual_matching", st.session_state.lang)],
-        help="Wählen Sie 'Automatisch', um basierend auf einem Call zu suchen, oder 'Manuell', um einen eigenen Suchbegriff einzugeben."
+        help=translate("search_mode_help", st.session_state.lang)
     )
 
     matcher = MatchingService(llm_service, st.session_state.db_manager, st.session_state.vector_store)
@@ -506,9 +509,9 @@ with tab4:
             st.info(f"{translate('active_call', st.session_state.lang)} **{current_call_data.get('Thema')}**")
     else:
         manual_query = st.text_input(
-            "Suchbegriff eingeben",
+            translate("search_query_label", st.session_state.lang),
             placeholder="z.B. KI im Maschinenbau",
-            help="Geben Sie technische Anforderungen oder Fachbereiche ein."
+            help=translate("search_query_help", st.session_state.lang)
         )
 
     st.subheader(translate("filters", st.session_state.lang))
@@ -520,20 +523,21 @@ with tab4:
     with col_f1:
         # Pre-select Deutschland if it's a German call
         default_country_index = 0
-        if current_call_data and current_call_data.get("Sitz_der_Organisation") == "Deutschland":
+        sitz = (current_call_data.get("Sitz_der_Organisation") or "").strip().lower() if current_call_data else ""
+        if sitz == "deutschland":
             if "Deutschland" in countries:
                 default_country_index = countries.index("Deutschland") + 1
 
-        country_filter = st.selectbox("Land filtern", ["Alle"] + countries, index=default_country_index, key="hybrid_country_filter")
+        country_filter = st.selectbox(translate("filter_country", st.session_state.lang), [translate("all_option", st.session_state.lang)] + countries, index=default_country_index, key="hybrid_country_filter")
     with col_f2:
-        state_filter = st.selectbox("Bundesland filtern", ["Alle"] + states, index=0, key="hybrid_state_filter")
+        state_filter = st.selectbox(translate("filter_state", st.session_state.lang), [translate("all_option", st.session_state.lang)] + states, index=0, key="hybrid_state_filter")
     with col_f3:
-        org_type_filter = st.selectbox("Organisationsart filtern", ["Alle", "Unternehmen", "Forschungseinrichtung", "Hochschule", "KMU"], key="hybrid_org_filter")
+        org_type_filter = st.selectbox(translate("filter_org_type", st.session_state.lang), [translate("all_option", st.session_state.lang), "Unternehmen", "Forschungseinrichtung", "Hochschule", "KMU"], key="hybrid_org_filter")
 
     col_btn1, col_btn2 = st.columns(2)
     with col_btn1:
         if st.button(translate("find_organisations_button", st.session_state.lang)):
-            with st.spinner("Suche läuft..."):
+            with st.spinner(translate("search_running", st.session_state.lang)):
                 queries = []
                 if search_mode == translate("auto_matching", st.session_state.lang) and current_call_data:
                     # Query generation and caching
@@ -550,7 +554,7 @@ with tab4:
                         queries = matcher.generate_multiple_matching_queries(current_call_data, n=5)
                         with open(query_cache_path, "w", encoding="utf-8") as f:
                             json.dump(queries, f, ensure_ascii=False)
-                elif search_mode == "Manuelle Hybrid-Suche" and manual_query:
+                elif search_mode == translate("manual_matching", st.session_state.lang) and manual_query:
                     # Optimize manual query first
                     optimized_query = matcher.rephrase_query(manual_query)
                     queries = matcher.generate_multiple_matching_queries(optimized_query, n=5)
@@ -560,11 +564,12 @@ with tab4:
                 if queries:
                     st.session_state.last_queries = queries
                     filters = {}
-                    if country_filter != "Alle":
+                    all_opt = translate("all_option", st.session_state.lang)
+                    if country_filter != all_opt:
                         filters["country"] = country_filter
-                    if state_filter != "Alle":
+                    if state_filter != all_opt:
                         filters["state"] = state_filter
-                    if org_type_filter != "Alle":
+                    if org_type_filter != all_opt:
                         if org_type_filter == "KMU":
                             filters["org_type"] = "Unternehmen"
                             filters["kmu_status"] = True
@@ -596,12 +601,12 @@ with tab4:
 
     with col_btn2:
         if st.button(translate("suggest_topics_button", st.session_state.lang)):
-            if not current_call_data and search_mode == "Manuelle Hybrid-Suche":
+            if not current_call_data and search_mode == translate("manual_matching", st.session_state.lang):
                 # Create a minimal call data from manual query if no call selected
                 current_call_data = {"Thema": manual_query, "Beschreibung": f"Manuelle Suche nach: {manual_query}"}
 
             if current_call_data:
-                with st.spinner("Generiere Vorschläge..."):
+                with st.spinner(translate("generating_suggestions", st.session_state.lang)):
                     topics = matcher.suggest_research_topics(
                         current_call_data,
                         user_context=st.session_state.get("user_context", ""),
@@ -613,7 +618,7 @@ with tab4:
 
     # Unified Display
     if st.session_state.last_queries:
-        st.write("### Verwendete Suchanfragen:")
+        st.write(f"### {translate('used_queries', st.session_state.lang)}")
         for q in st.session_state.last_queries:
             st.info(q)
 
@@ -650,13 +655,13 @@ with tab4:
     # Internet Discovery Section
     st.subheader(translate("discover_internet", st.session_state.lang))
     internet_topic = st.text_input(
-        "Topic for internet search",
+        translate("topic_internet_search", st.session_state.lang),
         placeholder="Innovative startups in robotics Germany",
-        help="Search the web for new companies matching this topic."
+        help=translate("topic_internet_help", st.session_state.lang)
     )
     if st.button(translate("search_internet_button", st.session_state.lang)):
         matcher = MatchingService(llm_service, st.session_state.db_manager, st.session_state.vector_store)
-        with st.spinner("Searching the web..."):
+        with st.spinner(translate("search_running", st.session_state.lang)):
             web_results = matcher.search_internet_for_companies(internet_topic)
             for res in web_results:
                 col1, col2 = st.columns([3, 1])
@@ -664,7 +669,7 @@ with tab4:
                     st.markdown(f"**[{res['name']}]({res['url']})**")
                     st.write(res['snippet'])
                 with col2:
-                    if st.button("Index this company", key=res['url']):
+                    if st.button(translate("index_this_company", st.session_state.lang), key=res['url']):
                         indexer = IndexingService(llm_service, st.session_state.db_manager, st.session_state.vector_store)
                         indexer.index_companies_from_links([res['url']])
                         st.success("Indexed!")
@@ -675,10 +680,10 @@ with tab5:
     st.warning(translate("linkedin_notice", st.session_state.lang))
     if li_username and li_password:
         li_service = LinkedInService(llm_service, li_username, li_password)
-        li_limit = st.number_input("Anzahl zu suchender Kontakte", min_value=1, value=20, step=1, help="Begrenzt die Anzahl der abgerufenen 1st-degree Kontakte.")
+        li_limit = st.number_input(translate("li_contacts_limit", st.session_state.lang), min_value=1, value=20, step=1, help="Begrenzt die Anzahl der abgerufenen 1st-degree Kontakte.")
         if st.button(translate("fetch_contacts_button", st.session_state.lang)):
             if "last_call" in st.session_state:
-                with st.status("LinkedIn processing...") as status:
+                with st.status(translate("li_processing", st.session_state.lang)) as status:
                     contacts = li_service.get_first_degree_contacts(limit=li_limit, status_callback=lambda msg: status.update(label=msg))
                     if contacts:
                         result = li_service.find_matching_contacts_for_call(
@@ -691,16 +696,16 @@ with tab5:
                         criteria = result.get("criteria", "")
 
                         if identified_names:
-                            status.update(label=f"LLM identified {len(identified_names)} potential matches!", state="complete")
+                            status.update(label=translate("llm_identified_matches", st.session_state.lang, count=len(identified_names)), state="complete")
 
-                            st.subheader("Matching Criteria")
+                            st.subheader(translate("matching_criteria", st.session_state.lang))
                             st.write(criteria)
 
-                            st.subheader("Contacts identified by LLM")
+                            st.subheader(translate("contacts_identified_llm", st.session_state.lang))
                             st.write(", ".join(identified_names))
 
                             if matches:
-                                st.subheader("Final Matching Contacts")
+                                st.subheader(translate("final_matching_contacts", st.session_state.lang))
                                 for contact in matches:
                                     c_name = f"{contact.get('firstName')} {contact.get('lastName')}"
                                     st.write(f"**{c_name}** - {contact.get('occupation')}")
@@ -708,13 +713,13 @@ with tab5:
                                         msg = li_service.generate_outreach_message(c_name, "his/her company", st.session_state.last_call)
                                         st.text_area("Message:", value=msg, height=200)
                             else:
-                                st.info("No matching contacts found in the detailed profiles.")
+                                st.info(translate("no_matching_contacts_detailed", st.session_state.lang))
                         else:
-                            status.update(label="No matches found.", state="error")
-                            st.info("No matching LinkedIn contacts identified by the LLM.")
+                            status.update(label=translate("no_matches_found", st.session_state.lang), state="error")
+                            st.info(translate("no_matching_contacts_llm", st.session_state.lang))
                     else:
-                        status.update(label="No contacts found.", state="error")
-                        st.info("No LinkedIn contacts found. Check your credentials.")
+                        status.update(label=translate("no_contacts_found", st.session_state.lang), state="error")
+                        st.info(translate("no_li_contacts_found", st.session_state.lang))
             else:
                 st.warning(translate("analyze_first_warn", st.session_state.lang))
     else:
@@ -726,42 +731,43 @@ with tab6:
     if st.button(translate("refresh_db_button", st.session_state.lang)):
         removed = st.session_state.db_manager.deduplicate_companies()
         if removed > 0:
-            st.success(f"{removed} Duplikate wurden entfernt.")
+            st.success(translate("all_duplicates_removed", st.session_state.lang, count=removed))
         else:
-            st.info("Keine Duplikate gefunden.")
+            st.info(translate("no_duplicates_found", st.session_state.lang))
         st.rerun()
 
     companies = st.session_state.db_manager.get_all_companies()
     if companies:
         # Filtering logic
-        st.subheader("Filter & Suche")
+        st.subheader(translate("filter_and_search", st.session_state.lang))
         col_f1, col_f2, col_f3, col_f4 = st.columns(4)
         with col_f1:
-            name_filter = st.text_input("Name suchen", placeholder="Unternehmen A", key="db_name_filter")
+            name_filter = st.text_input(translate("search_name", st.session_state.lang), placeholder="Unternehmen A", key="db_name_filter")
         with col_f2:
             countries = sorted(list({c.country for c in companies if c.country}))
-            country_filter = st.selectbox("Land filtern", ["Alle"] + countries, key="db_country_filter")
+            country_filter = st.selectbox(translate("filter_country", st.session_state.lang), [translate("all_option", st.session_state.lang)] + countries, key="db_country_filter")
         with col_f3:
             states = sorted(list({c.state for c in companies if c.state}))
-            state_filter = st.selectbox("Bundesland filtern", ["Alle"] + states, key="db_state_filter")
+            state_filter = st.selectbox(translate("filter_state", st.session_state.lang), [translate("all_option", st.session_state.lang)] + states, key="db_state_filter")
         with col_f4:
             org_types = sorted(list({c.org_type for c in companies if c.org_type}))
-            org_filter_options = ["Alle"] + org_types
+            org_filter_options = [translate("all_option", st.session_state.lang)] + org_types
             if "KMU" not in org_filter_options:
                 org_filter_options.append("KMU")
-            org_type_filter = st.selectbox("Organisationsart filtern", org_filter_options, key="db_org_type_filter")
+            org_type_filter = st.selectbox(translate("filter_org_type", st.session_state.lang), org_filter_options, key="db_org_type_filter")
 
         # Convert to list of dicts for dataframe
         data = []
+        all_opt = translate("all_option", st.session_state.lang)
         for c in companies:
             # Apply filters
             if name_filter and name_filter.lower() not in (c.name or "").lower():
                 continue
-            if country_filter != "Alle" and c.country != country_filter:
+            if country_filter != all_opt and c.country != country_filter:
                 continue
-            if state_filter != "Alle" and c.state != state_filter:
+            if state_filter != all_opt and c.state != state_filter:
                 continue
-            if org_type_filter != "Alle":
+            if org_type_filter != all_opt:
                 if org_type_filter == "KMU":
                     if c.org_type != "Unternehmen" or not c.kmu_status:
                         continue
@@ -787,7 +793,56 @@ with tab6:
         # Sort by Name (case-insensitive)
         data.sort(key=lambda x: (x.get("Name") or "").lower())
 
-        st.write(f"Anzahl angezeigter Einträge: {len(data)}")
+        st.write(translate("displayed_entries", st.session_state.lang, count=len(data)))
+
+        # Map display above the table
+        if data:
+            map_data = []
+            # Use session state to persist selection for map highlighting
+            selected_urls = st.session_state.get("last_selected_urls", [])
+
+            for item in data:
+                coords = get_coordinates(item.get("City"), item.get("Land") or "Germany")
+                if coords:
+                    color = [246, 51, 102, 200] # Default red
+                    radius = 8000
+                    if item.get("URL") in selected_urls:
+                        color = [50, 205, 50, 255] # Lime Green
+                        radius = 12000
+
+                    map_data.append({
+                        "name": item.get("Name"),
+                        "lat": coords[0],
+                        "lon": coords[1],
+                        "color": color,
+                        "radius": radius
+                    })
+
+            if map_data:
+                df_map = pd.DataFrame(map_data)
+
+                # Initial View: Zoom to NRW (approx 51.5, 7.5)
+                view_state = pdk.ViewState(
+                    latitude=51.48,
+                    longitude=7.55,
+                    zoom=6,
+                    pitch=0,
+                )
+
+                layer = pdk.Layer(
+                    "ScatterplotLayer",
+                    df_map,
+                    get_position="[lon, lat]",
+                    get_color="color",
+                    get_radius="radius",
+                    pickable=True,
+                )
+
+                st.pydeck_chart(pdk.Deck(
+                    layers=[layer],
+                    initial_view_state=view_state,
+                    tooltip={"text": "{name}"}
+                ))
 
         edited_data = st.data_editor(
             data,
@@ -795,6 +850,16 @@ with tab6:
             num_rows="dynamic",
             key="db_editor"
         )
+
+        # Update map selection for next render
+        if edited_data is not None:
+            new_selected_urls = []
+            if isinstance(edited_data, list):
+                new_selected_urls = [row.get("URL") for row in edited_data if isinstance(row, dict) and row.get("Select")]
+
+            if new_selected_urls != st.session_state.get("last_selected_urls", []):
+                st.session_state.last_selected_urls = new_selected_urls
+                st.rerun()
 
         # Check for changes in data_editor and auto-save
         db_edits = st.session_state.get("db_editor", {})
@@ -819,12 +884,12 @@ with tab6:
 
             try:
                 st.session_state.db_manager.update_companies(update_list)
-                st.toast("Änderungen automatisch gespeichert!")
+                st.toast(translate("auto_saved", st.session_state.lang))
             except Exception as e:
-                st.error(f"Fehler beim automatischen Speichern: {e}")
+                st.error(translate("save_error", st.session_state.lang, error=e))
 
         # Detailed view in expanders
-        st.subheader("Detailed Organization Profiles")
+        st.subheader(translate("detailed_profiles", st.session_state.lang))
 
         # Determine selected URLs safely
         selected_urls = []
@@ -853,9 +918,9 @@ with tab6:
                         st.write(f"**SME:** {c.kmu_status}")
                         st.write(f"**Research Active:** {c.research_active}")
 
-                    st.write("**Summary:**")
+                    st.write(f"**{translate('summary', st.session_state.lang)}:**")
                     st.write(c.summary)
                     st.write("**Products/Services:**")
                     st.write(c.products)
     else:
-        st.info("No companies indexed yet. Go to 'Company Indexing' to add some.")
+        st.info(translate("no_companies_indexed", st.session_state.lang))
