@@ -88,7 +88,7 @@ def get_coordinates(city: str, country: str = "Germany", retries: int = 1, only_
             except (GeocoderTimedOut, GeocoderServiceError) as e:
                 err_str = str(e)
                 if "429" in err_str:
-                    print(f"Nominatim rate limited (429). Switching to circuit breaker for this session.")
+                    print("Nominatim rate limited (429). Switching to circuit breaker for this session.")
                     with _nominatim_lock:
                         _nominatim_disabled = True
                     break # Trigger fallback

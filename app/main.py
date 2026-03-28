@@ -776,6 +776,8 @@ with tab6:
         # Convert to list of dicts for dataframe
         data = []
         all_opt = translate("all_option", st.session_state.lang)
+        selected_urls = st.session_state.get("last_selected_urls", [])
+
         for c in companies:
             # Apply filters
             if name_filter and name_filter.lower() not in (c.name or "").lower():
@@ -792,7 +794,7 @@ with tab6:
                     continue
 
             data.append({
-                "Select": False,
+                "Select": c.url in selected_urls,
                 "Name": c.name,
                 "URL": c.url,
                 "Industry": c.industry,
@@ -828,17 +830,18 @@ with tab6:
                 coords = get_coordinates(item.get("City"), item.get("Land") or "Germany", only_from_cache=True)
                 if coords:
                     color = [246, 51, 102, 200] # Default red
-                    radius = 8000
+                    radius_pixels = 6
                     if item.get("URL") in selected_urls:
                         color = [50, 205, 50, 255] # Lime Green
-                        radius = 12000
+                        radius_pixels = 10
 
                     map_data.append({
                         "name": item.get("Name"),
+                        "url": item.get("URL"),
                         "lat": coords[0],
                         "lon": coords[1],
                         "color": color,
-                        "radius": radius
+                        "radius_pixels": radius_pixels
                     })
 
             if map_data:
@@ -855,17 +858,28 @@ with tab6:
                 layer = pdk.Layer(
                     "ScatterplotLayer",
                     df_map,
+                    id="company-layer",
                     get_position="[lon, lat]",
                     get_color="color",
-                    get_radius="radius",
+                    radius_units="pixels",
+                    get_radius="radius_pixels",
                     pickable=True,
                 )
 
-                st.pydeck_chart(pdk.Deck(
+                event = st.pydeck_chart(pdk.Deck(
                     layers=[layer],
                     initial_view_state=view_state,
                     tooltip={"text": "{name}"}
-                ))
+                ), on_select="rerun", selection_mode="single-object", key="db_map")
+
+                # Map click handling
+                if event and "selection" in event and "objects" in event["selection"]:
+                    selected_objects = event["selection"]["objects"].get("company-layer", [])
+                    if selected_objects:
+                        clicked_url = selected_objects[0].get("url")
+                        if clicked_url and clicked_url not in st.session_state.get("last_selected_urls", []):
+                            st.session_state.last_selected_urls = [clicked_url]
+                            st.rerun()
 
         edited_data = st.data_editor(
             data,
