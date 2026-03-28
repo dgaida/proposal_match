@@ -4,6 +4,7 @@ import json
 import urllib.parse
 import pandas as pd
 import pydeck as pdk
+import threading
 from typing import Optional, Dict, Any
 from dotenv import load_dotenv
 from app.services.llm_service import LLMService
@@ -17,7 +18,7 @@ from app.utils.db_manager import DBManager
 from app.utils.vector_store import VectorStore
 from app.utils.translations import translate
 from app.utils.file_utils import get_file_age_days
-from app.utils.geo_utils import get_coordinates
+from app.utils.geo_utils import get_coordinates, batch_geocode
 
 # Load credentials from secrets.env if it exists
 load_dotenv("secrets.env")
@@ -32,6 +33,14 @@ st.set_page_config(page_title=translate("page_title", st.session_state.lang), la
 # Persistent Storage Initialization
 if "db_manager" not in st.session_state:
     st.session_state.db_manager = DBManager()
+
+    # Start background geocoding once per session
+    if "geocoding_started" not in st.session_state:
+        companies = st.session_state.db_manager.get_all_companies()
+        thread = threading.Thread(target=batch_geocode, args=(companies,), daemon=True)
+        thread.start()
+        st.session_state.geocoding_started = True
+
 if "vector_store" not in st.session_state:
     st.session_state.vector_store = VectorStore()
 
@@ -802,6 +811,11 @@ with tab6:
             selected_urls = st.session_state.get("last_selected_urls", [])
 
             for item in data:
+                # Issue: only show NRW companies on map to improve performance
+                state = (item.get("State") or "").lower()
+                if state not in ["nrw", "nordrhein-westfalen", "north rhine-westphalia"]:
+                    continue
+
                 coords = get_coordinates(item.get("City"), item.get("Land") or "Germany")
                 if coords:
                     color = [246, 51, 102, 200] # Default red

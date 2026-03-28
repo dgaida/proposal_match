@@ -1,46 +1,41 @@
 import json
 import os
 import time
-from typing import Optional, Tuple, Dict
+import threading
+from typing import Optional, Tuple, Dict, List
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut
 
 CACHE_FILE = "data/geo_cache.json"
+_geo_cache: Dict[str, Tuple[float, float]] = {}
+_cache_lock = threading.Lock()
 
 def load_cache() -> Dict[str, Tuple[float, float]]:
-    """Loads the geocoding cache from a JSON file.
+    """Loads the geocoding cache from a JSON file."""
+    global _geo_cache
+    with _cache_lock:
+        if _geo_cache:
+            return _geo_cache
 
-    Returns:
-        Dict[str, Tuple[float, float]]: The cached coordinates.
-    """
-    if os.path.exists(CACHE_FILE):
-        try:
-            with open(CACHE_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return {}
+        if os.path.exists(CACHE_FILE):
+            try:
+                with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    _geo_cache = {k: tuple(v) for k, v in data.items()}
+                    return _geo_cache
+            except Exception:
+                return {}
     return {}
 
 def save_cache(cache: Dict[str, Tuple[float, float]]):
-    """Saves the geocoding cache to a JSON file.
-
-    Args:
-        cache (Dict[str, Tuple[float, float]]): The cache to save.
-    """
+    """Saves the geocoding cache to a JSON file."""
     os.makedirs(os.path.dirname(CACHE_FILE), exist_ok=True)
-    with open(CACHE_FILE, "w", encoding="utf-8") as f:
-        json.dump(cache, f, ensure_ascii=False, indent=4)
+    with _cache_lock:
+        with open(CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(cache, f, ensure_ascii=False, indent=4)
 
 def get_coordinates(city: str, country: str = "Germany") -> Optional[Tuple[float, float]]:
-    """Fetches GPS coordinates for a city, using a local cache.
-
-    Args:
-        city (str): The name of the city.
-        country (str): The name of the country. Defaults to "Germany".
-
-    Returns:
-        Optional[Tuple[float, float]]: (latitude, longitude) or None if not found.
-    """
+    """Fetches GPS coordinates for a city, using a local cache."""
     if not city:
         return None
 
@@ -48,7 +43,7 @@ def get_coordinates(city: str, country: str = "Germany") -> Optional[Tuple[float
     key = f"{city.strip()}, {country.strip()}"
 
     if key in cache:
-        return tuple(cache[key])
+        return cache[key]
 
     try:
         # Respect Nominatim usage policy: 1 second delay between non-cached requests
@@ -57,8 +52,9 @@ def get_coordinates(city: str, country: str = "Germany") -> Optional[Tuple[float
         location = geolocator.geocode(key)
         if location:
             coords = (location.latitude, location.longitude)
-            cache[key] = coords
-            save_cache(cache)
+            with _cache_lock:
+                _geo_cache[key] = coords
+            save_cache(_geo_cache)
             return coords
     except GeocoderTimedOut:
         return None
@@ -67,3 +63,9 @@ def get_coordinates(city: str, country: str = "Germany") -> Optional[Tuple[float
         return None
 
     return None
+
+def batch_geocode(companies: List[any]):
+    """Background task to pre-geocode all company locations."""
+    for company in companies:
+        if company.city:
+            get_coordinates(company.city, company.country or "Germany")
