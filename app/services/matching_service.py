@@ -67,25 +67,50 @@ class MatchingService:
         # Simplified parsing for the suggestion list
         return [line.strip("- ").strip("12345. ") for line in response.splitlines() if line.strip()]
 
-    def generate_matching_query(self, call_data: Dict[str, Any]) -> str:
-        """Generates an optimized semantic search query for matching companies.
+    def generate_multiple_matching_queries(self, context_data: Any, n: int = 5) -> List[str]:
+        """Generates multiple diverse semantic search queries in German.
 
         Args:
-            call_data (Dict[str, Any]): Data about the research call.
+            context_data (Any): Data about the research call or a manual query string.
+            n (int): Number of queries to generate.
 
         Returns:
-            str: A multi-sentence query string for vector search.
+            List[str]: A list of query strings for vector search.
         """
+        context_str = json.dumps(context_data) if isinstance(context_data, dict) else str(context_data)
         prompt = f"""
-        Given the following research call, generate a broad semantic search query (2-3 sentences) to find matching companies in a vector database.
-        The query should include not only the core technical requirements but also related technologies, broader application areas, and general expertise that might be relevant.
-        Aim for a query that is inclusive and captures a wide range of potentially interested organizations.
-        RESPOND ONLY WITH THE QUERY STRING.
+        Given the following context, generate {n} diverse semantic search queries in GERMAN to find matching companies in a vector database.
+        The companies in the database are described in German.
+        Each query should be 1-2 sentences long and focus on different aspects of the context (technical, application-oriented, strategic).
+        Return only the queries, one per line, without numbering or bullets.
 
-        Call: {json.dumps(call_data)}
+        Context: {context_str}
         """
         messages = [
-            {"role": "system", "content": "You are an expert in research funding and technical matchmaking."},
+            {"role": "system", "content": "You are an expert in research funding and technical matchmaking. You respond only in German."},
+            {"role": "user", "content": prompt}
+        ]
+        response = self.llm_service.chat_completion(messages)
+        return [line.strip("- ").strip() for line in response.splitlines() if line.strip()]
+
+    def rephrase_query(self, query: str) -> str:
+        """Rephrases a manual query to be optimal for semantic search in German.
+
+        Args:
+            query (str): The user's original search term.
+
+        Returns:
+            str: The rephrased and expanded query.
+        """
+        prompt = f"""
+        Rephrase and expand the following search query to be optimal for a semantic search in a vector database containing German company profiles.
+        Include synonyms and related technical terms in GERMAN.
+        RESPOND ONLY WITH THE REPHRASED QUERY IN GERMAN.
+
+        Original query: {query}
+        """
+        messages = [
+            {"role": "system", "content": "You are an expert in information retrieval and semantic search."},
             {"role": "user", "content": prompt}
         ]
         return self.llm_service.chat_completion(messages).strip('" \n')
@@ -99,7 +124,7 @@ class MatchingService:
             limit (int): Maximum number of results to return.
 
         Returns:
-            List[Dict[str, Any]]: A list of matching organization metadata.
+            List[Dict[str, Any]]: A list of matching organization metadata including relevance scores.
         """
         # Step 1: Prepare ChromaDB filter
         where_filter = None
@@ -124,33 +149,43 @@ class MatchingService:
 
         # Extract the results from the vector store response
         company_ids = vector_results.get("ids", [[]])[0]
+        distances = vector_results.get("distances", [[]])[0]
 
         # Step 3: Fetch full metadata from SQLite for the results
+        # We use Company.url.in_(company_ids) to perform a batch retrieval using the SQLAlchemy IN operator.
+        # This efficiently fetches all Company records whose URL matches any of the IDs returned by the vector search.
         session = self.db_manager.Session()
         results = session.query(Company).filter(Company.url.in_(company_ids)).all()
 
-        # Maintain vector search order (relevance)
+        # Maintain vector search order (relevance) and include scores
         id_to_result = {r.url: r for r in results}
-        final_results = [id_to_result[url] for url in company_ids if url in id_to_result]
+        id_to_distance = dict(zip(company_ids, distances))
 
-        # Convert to dictionary for easy consumption
-        formatted_results = []
-        for r in final_results:
-            formatted_results.append({
-                "name": r.name,
-                "url": r.url,
-                "state": r.state,
-                "city": r.city,
-                "country": r.country,
-                "org_type": r.org_type,
-                "industry": r.industry,
-                "summary": r.summary,
-                "employees_count": r.employees_count,
-                "kmu_status": r.kmu_status
-            })
+        final_results = []
+        for url in company_ids:
+            if url in id_to_result:
+                r = id_to_result[url]
+                dist = id_to_distance.get(url, 1.0)
+                # Convert distance to a relevance score (0.0 to 1.0)
+                # ChromaDB distances are often L2; 1/(1+dist) is a common heuristic
+                relevance = 1.0 / (1.0 + dist)
+
+                final_results.append({
+                    "name": r.name,
+                    "url": r.url,
+                    "state": r.state,
+                    "city": r.city,
+                    "country": r.country,
+                    "org_type": r.org_type,
+                    "industry": r.industry,
+                    "summary": r.summary,
+                    "employees_count": r.employees_count,
+                    "kmu_status": r.kmu_status,
+                    "relevance": relevance
+                })
 
         session.close()
-        return formatted_results
+        return final_results
 
     def generate_match_justification(self, call_data: Dict[str, Any], matched_companies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Generates a German justification for each matched organization.
