@@ -151,6 +151,26 @@ class MatchingService:
             where_doc = {"$contains": keywords}
 
         # Step 2: Semantic search in ChromaDB with pre-filtering
+        print(f"Hybrid Search Execution:")
+        print(f"  Query: {query}")
+        print(f"  Filters: {where_filter}")
+        print(f"  Keywords: {keywords}")
+
+        if filters:
+            session = self.db_manager.Session()
+            db_q = session.query(Company)
+            if filters.get("state"):
+                db_q = db_q.filter(Company.state == filters["state"])
+            if filters.get("country"):
+                db_q = db_q.filter(Company.country == filters["country"])
+            if filters.get("org_type"):
+                db_q = db_q.filter(Company.org_type == filters["org_type"])
+            if filters.get("kmu_status") is not None:
+                db_q = db_q.filter(Company.kmu_status == filters["kmu_status"])
+            count = db_q.count()
+            print(f"  Companies matching metadata filters in SQLite: {count}")
+            session.close()
+
         vector_results = self.vector_store.query_companies(query_text=query, n_results=limit, where=where_filter, where_document=where_doc)
 
         # Extract the results from the vector store response
@@ -277,6 +297,7 @@ class MatchingService:
                 clean_response = clean_response[:-3]
 
             proposals = json.loads(clean_response)
+            print(f"Generated {len(proposals)} detailed project proposals.")
         except Exception as e:
             print(f"Failed to parse proposals JSON: {e}")
             print(f"Raw response: {response}")
@@ -291,6 +312,7 @@ class MatchingService:
             seen_urls = set()
 
             for missing_search in prop.get("missing_partners_search", []):
+                print(f"  - Missing Partner Request: {missing_search.get('type_description')}")
                 filters = missing_search.get("filters", {})
                 queries = missing_search.get("queries", [])
                 keywords = missing_search.get("keywords")

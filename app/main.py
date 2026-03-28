@@ -504,6 +504,8 @@ with tab4:
         st.session_state.last_queries = []
     if "current_proposals" not in st.session_state:
         st.session_state.current_proposals = []
+    if "current_call_name" not in st.session_state:
+        st.session_state.current_call_name = ""
 
     search_mode = st.radio(
         translate("search_mode", st.session_state.lang),
@@ -523,11 +525,20 @@ with tab4:
 
         if selected_call_file:
             call_name = selected_call_file.replace(".md", "")
+
+            # Reset state if call changed
+            if st.session_state.current_call_name != call_name:
+                st.session_state.current_call_name = call_name
+                st.session_state.current_proposals = []
+                st.session_state.current_topics = []
+                st.session_state.current_matches = []
+                st.session_state.last_queries = []
+
             with open(os.path.join(summaries_dir, selected_call_file), "r", encoding="utf-8") as f:
                 current_call_data = parse_md_to_result(f.read())
             st.info(f"{translate('active_call', st.session_state.lang)} **{current_call_data.get('Thema')}**")
 
-            # Load cached proposals if they exist
+            # Load cached proposals if they exist and state is empty
             proposals_dir = "data/proposals"
             os.makedirs(proposals_dir, exist_ok=True)
             proposal_cache_path = os.path.join(proposals_dir, f"{call_name}_proposals.json")
