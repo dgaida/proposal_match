@@ -2,13 +2,23 @@ import json
 import os
 import time
 import threading
-from typing import Optional, Tuple, Dict, List
+from typing import Optional, Tuple, Dict, List, Set, Any
 from geopy.geocoders import Nominatim, Photon
 from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 
 CACHE_FILE = "data/geo_cache.json"
 _geo_cache: Dict[str, Tuple[float, float]] = {}
+_failed_keys: Set[str] = set()
 _cache_lock = threading.Lock()
+
+# Global geolocator instances to reuse connections
+USER_AGENT = "funding_research_app_v2_1"
+_nominatim = Nominatim(user_agent=USER_AGENT, timeout=10)
+_photon = Photon(user_agent=USER_AGENT, timeout=10)
+
+# Circuit breaker for Nominatim
+_nominatim_disabled = False
+_nominatim_lock = threading.Lock()
 
 def load_cache() -> Dict[str, Tuple[float, float]]:
     """Loads the geocoding cache from a JSON file."""
@@ -34,65 +44,106 @@ def save_cache(cache: Dict[str, Tuple[float, float]]):
         with open(CACHE_FILE, "w", encoding="utf-8") as f:
             json.dump(cache, f, ensure_ascii=False, indent=4)
 
-def get_coordinates(city: str, country: str = "Germany", retries: int = 2) -> Optional[Tuple[float, float]]:
+def get_coordinates(city: str, country: str = "Germany", retries: int = 1, only_from_cache: bool = False) -> Optional[Tuple[float, float]]:
     """Fetches GPS coordinates for a city with multiple strategies and fallbacks.
 
     Strategies:
     1. Local cache
-    2. Nominatim (Primary)
-    3. Photon (Fallback for errors/timeouts)
+    2. Nominatim (Primary, with circuit breaker)
+    3. Photon (Fallback)
     """
+    global _nominatim_disabled
     if not city:
         return None
 
     cache = load_cache()
     key = f"{city.strip()}, {country.strip()}"
 
-    if key in cache:
-        return cache[key]
+    with _cache_lock:
+        if key in cache:
+            return cache[key]
+        if only_from_cache:
+            return None
+        if key in _failed_keys:
+            return None
 
-    # Primary Strategy: Nominatim
-    for attempt in range(retries):
-        try:
-            # Respect Nominatim usage policy: 1 second delay between non-cached requests
-            time.sleep(1.1)
-            geolocator = Nominatim(user_agent="funding_research_app_v2", timeout=10)
-            location = geolocator.geocode(key)
-            if location:
-                coords = (location.latitude, location.longitude)
-                with _cache_lock:
-                    _geo_cache[key] = coords
-                save_cache(_geo_cache)
-                return coords
-            break # Not found, don't retry
-        except (GeocoderTimedOut, GeocoderServiceError) as e:
-            if "429" in str(e) or attempt < retries - 1:
-                time.sleep(2)
-                continue
-            break
+    # Primary Strategy: Nominatim (if not disabled)
+    use_nominatim = False
+    with _nominatim_lock:
+        use_nominatim = not _nominatim_disabled
+
+    if use_nominatim:
+        for attempt in range(retries + 1):
+            try:
+                # Respect Nominatim usage policy: more conservative 2.0 second delay
+                time.sleep(2.0)
+                location = _nominatim.geocode(key)
+                if location:
+                    coords = (location.latitude, location.longitude)
+                    with _cache_lock:
+                        _geo_cache[key] = coords
+                        save_cache(_geo_cache)
+                    return coords
+                break # Not found
+            except (GeocoderTimedOut, GeocoderServiceError) as e:
+                err_str = str(e)
+                if "429" in err_str:
+                    print(f"Nominatim rate limited (429). Switching to circuit breaker for this session.")
+                    with _nominatim_lock:
+                        _nominatim_disabled = True
+                    break # Trigger fallback
+                if attempt < retries:
+                    time.sleep(2)
+                    continue
+                break
 
     # Fallback Strategy: Photon (Komoot)
     try:
-        # Photon usually has less restrictive rate limits but we still play nice
-        time.sleep(0.5)
-        geolocator = Photon(user_agent="funding_research_app_v2", timeout=10)
-        location = geolocator.geocode(key)
+        time.sleep(1.0) # Play nice with Photon too
+        location = _photon.geocode(key)
         if location:
             coords = (location.latitude, location.longitude)
             with _cache_lock:
                 _geo_cache[key] = coords
-            save_cache(_geo_cache)
+                save_cache(_geo_cache)
             return coords
     except Exception as e:
         print(f"Photon fallback failed for {key}: {e}")
 
+    # Mark as failed for this session to avoid redundant calls
+    with _cache_lock:
+        _failed_keys.add(key)
     return None
 
-def batch_geocode(companies: List[any]):
-    """Background task to pre-geocode NRW company locations."""
+def batch_geocode(companies: List[Any]):
+    """Background task to pre-geocode unique NRW company locations."""
     nrw_variants = ["nrw", "nordrhein-westfalen", "north rhine-westphalia"]
+
+    # Extract unique cities to geocode
+    unique_cities_to_geocode = set()
     for company in companies:
-        state = (company.state or "").lower()
+        # Check both attribute and dict access to be safe
+        state = ""
+        if hasattr(company, "state"):
+            state = company.state
+        elif isinstance(company, dict):
+            state = company.get("state") or company.get("State")
+
+        state = (state or "").lower()
+
         if state in nrw_variants:
-            if company.city:
-                get_coordinates(company.city, company.country or "Germany")
+            city = ""
+            country = ""
+            if hasattr(company, "city"):
+                city = company.city
+                country = company.country
+            elif isinstance(company, dict):
+                city = company.get("city") or company.get("City")
+                country = company.get("country") or company.get("Land")
+
+            if city:
+                unique_cities_to_geocode.add((city.strip(), country or "Germany"))
+
+    # Pre-geocode unique locations
+    for city, country in unique_cities_to_geocode:
+        get_coordinates(city, country)

@@ -38,7 +38,7 @@ if "db_manager" not in st.session_state:
     if "geocoding_started" not in st.session_state:
         all_companies = st.session_state.db_manager.get_all_companies()
         nrw_variants = ["nrw", "nordrhein-westfalen", "north rhine-westphalia"]
-        nrw_companies = [c for c in all_companies if (c.state or "").lower() in nrw_variants]
+        nrw_companies = [c for c in all_companies if (c.state if hasattr(c, "state") else c.get("State", "")).lower() in nrw_variants]
 
         thread = threading.Thread(target=batch_geocode, args=(nrw_companies,), daemon=True)
         thread.start()
@@ -819,7 +819,8 @@ with tab6:
                 if state not in ["nrw", "nordrhein-westfalen", "north rhine-westphalia"]:
                     continue
 
-                coords = get_coordinates(item.get("City"), item.get("Land") or "Germany")
+                # UI thread: only use cache to avoid blocking
+                coords = get_coordinates(item.get("City"), item.get("Land") or "Germany", only_from_cache=True)
                 if coords:
                     color = [246, 51, 102, 200] # Default red
                     radius = 8000
