@@ -1,69 +1,142 @@
 import json
 import os
 import time
-from typing import Optional, Tuple, Dict
-from geopy.geocoders import Nominatim
-from geopy.exc import GeocoderTimedOut
+import threading
+from typing import Optional, Tuple, Dict, List, Set, Any
+from geopy.geocoders import Nominatim, Photon
+from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 
 CACHE_FILE = "data/geo_cache.json"
+_geo_cache: Dict[str, Tuple[float, float]] = {}
+_failed_keys: Set[str] = set()
+_cache_lock = threading.Lock()
+
+# Global geolocator instances to reuse connections
+USER_AGENT = "funding_research_app_v2_1"
+_nominatim = Nominatim(user_agent=USER_AGENT, timeout=10)
+_photon = Photon(user_agent=USER_AGENT, timeout=10)
+
+# Circuit breaker for Nominatim
+_nominatim_disabled = False
+_nominatim_lock = threading.Lock()
 
 def load_cache() -> Dict[str, Tuple[float, float]]:
-    """Loads the geocoding cache from a JSON file.
+    """Loads the geocoding cache from a JSON file."""
+    global _geo_cache
+    with _cache_lock:
+        if _geo_cache:
+            return _geo_cache
 
-    Returns:
-        Dict[str, Tuple[float, float]]: The cached coordinates.
-    """
-    if os.path.exists(CACHE_FILE):
-        try:
-            with open(CACHE_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return {}
+        if os.path.exists(CACHE_FILE):
+            try:
+                with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    _geo_cache = {k: tuple(v) for k, v in data.items()}
+                    return _geo_cache
+            except Exception:
+                return {}
     return {}
 
 def save_cache(cache: Dict[str, Tuple[float, float]]):
-    """Saves the geocoding cache to a JSON file.
-
-    Args:
-        cache (Dict[str, Tuple[float, float]]): The cache to save.
-    """
+    """Saves the geocoding cache to a JSON file."""
     os.makedirs(os.path.dirname(CACHE_FILE), exist_ok=True)
-    with open(CACHE_FILE, "w", encoding="utf-8") as f:
-        json.dump(cache, f, ensure_ascii=False, indent=4)
+    with _cache_lock:
+        with open(CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(cache, f, ensure_ascii=False, indent=4)
 
-def get_coordinates(city: str, country: str = "Germany") -> Optional[Tuple[float, float]]:
-    """Fetches GPS coordinates for a city, using a local cache.
+def get_coordinates(city: str, country: str = "Germany", retries: int = 1, only_from_cache: bool = False) -> Optional[Tuple[float, float]]:
+    """Fetches GPS coordinates for a city with multiple strategies and fallbacks.
 
-    Args:
-        city (str): The name of the city.
-        country (str): The name of the country. Defaults to "Germany".
-
-    Returns:
-        Optional[Tuple[float, float]]: (latitude, longitude) or None if not found.
+    Strategies:
+    1. Local cache
+    2. Nominatim (Primary, with circuit breaker)
+    3. Photon (Fallback)
     """
+    global _nominatim_disabled
     if not city:
         return None
 
     cache = load_cache()
     key = f"{city.strip()}, {country.strip()}"
 
-    if key in cache:
-        return tuple(cache[key])
+    with _cache_lock:
+        if key in cache:
+            return cache[key]
+        if only_from_cache:
+            return None
+        if key in _failed_keys:
+            return None
 
+    # Primary Strategy: Nominatim (if not disabled)
+    use_nominatim = False
+    with _nominatim_lock:
+        use_nominatim = not _nominatim_disabled
+
+    if use_nominatim:
+        for attempt in range(retries + 1):
+            try:
+                # Respect Nominatim usage policy: more conservative 2.0 second delay
+                time.sleep(2.0)
+                location = _nominatim.geocode(key)
+                if location:
+                    coords = (location.latitude, location.longitude)
+                    with _cache_lock:
+                        _geo_cache[key] = coords
+                        # save_cache(_geo_cache) # Moved out of hot path
+                    return coords
+                break # Not found
+            except (GeocoderTimedOut, GeocoderServiceError) as e:
+                err_str = str(e)
+                if "429" in err_str:
+                    print(f"Nominatim rate limited (429). Switching to circuit breaker for this session.")
+                    with _nominatim_lock:
+                        _nominatim_disabled = True
+                    break # Trigger fallback
+                if attempt < retries:
+                    time.sleep(2)
+                    continue
+                break
+
+    # Fallback Strategy: Photon (Komoot)
     try:
-        # Respect Nominatim usage policy: 1 second delay between non-cached requests
-        time.sleep(1)
-        geolocator = Nominatim(user_agent="funding_research_app", timeout=10)
-        location = geolocator.geocode(key)
+        time.sleep(1.0) # Play nice with Photon too
+        location = _photon.geocode(key)
         if location:
             coords = (location.latitude, location.longitude)
-            cache[key] = coords
-            save_cache(cache)
+            with _cache_lock:
+                _geo_cache[key] = coords
+                # save_cache(_geo_cache) # Moved out of hot path
             return coords
-    except GeocoderTimedOut:
-        return None
     except Exception as e:
-        print(f"Error geocoding {key}: {e}")
-        return None
+        print(f"Photon fallback failed for {key}: {e}")
 
+    # Mark as failed for this session to avoid redundant calls
+    with _cache_lock:
+        _failed_keys.add(key)
     return None
+
+def batch_geocode(companies: List[Any]):
+    """Background task to pre-geocode unique NRW company locations."""
+    nrw_variants = ["nrw", "nordrhein-westfalen", "north rhine-westphalia"]
+
+    # Extract unique cities to geocode
+    unique_cities_to_geocode = set()
+    for company in companies:
+        # Check both attribute and dict access to be safe
+        state = getattr(company, "state", None) or (company.get("State") if isinstance(company, dict) else None)
+        state = (state or "").lower()
+
+        if state in nrw_variants:
+            city = getattr(company, "city", None) or (company.get("City") if isinstance(company, dict) else None)
+            country = getattr(company, "country", None) or (company.get("Land") if isinstance(company, dict) else None)
+
+            if city:
+                unique_cities_to_geocode.add((city.strip(), country or "Germany"))
+
+    # Pre-geocode unique locations
+    if unique_cities_to_geocode:
+        for city, country in unique_cities_to_geocode:
+            get_coordinates(city, country)
+
+        # Save cache once after batch
+        save_cache(_geo_cache)
