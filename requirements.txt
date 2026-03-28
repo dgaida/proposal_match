@@ -11,3 +11,5 @@ ddgs
 linkedin_api
 pydantic-settings
 ruff
+geopy
+pydeck
