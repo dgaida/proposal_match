@@ -36,8 +36,11 @@ if "db_manager" not in st.session_state:
 
     # Start background geocoding once per session
     if "geocoding_started" not in st.session_state:
-        companies = st.session_state.db_manager.get_all_companies()
-        thread = threading.Thread(target=batch_geocode, args=(companies,), daemon=True)
+        all_companies = st.session_state.db_manager.get_all_companies()
+        nrw_variants = ["nrw", "nordrhein-westfalen", "north rhine-westphalia"]
+        nrw_companies = [c for c in all_companies if (c.state or "").lower() in nrw_variants]
+
+        thread = threading.Thread(target=batch_geocode, args=(nrw_companies,), daemon=True)
         thread.start()
         st.session_state.geocoding_started = True
 
