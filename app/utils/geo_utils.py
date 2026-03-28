@@ -82,7 +82,7 @@ def get_coordinates(city: str, country: str = "Germany", retries: int = 1, only_
                     coords = (location.latitude, location.longitude)
                     with _cache_lock:
                         _geo_cache[key] = coords
-                        save_cache(_geo_cache)
+                        # save_cache(_geo_cache) # Moved out of hot path
                     return coords
                 break # Not found
             except (GeocoderTimedOut, GeocoderServiceError) as e:
@@ -105,7 +105,7 @@ def get_coordinates(city: str, country: str = "Germany", retries: int = 1, only_
             coords = (location.latitude, location.longitude)
             with _cache_lock:
                 _geo_cache[key] = coords
-                save_cache(_geo_cache)
+                # save_cache(_geo_cache) # Moved out of hot path
             return coords
     except Exception as e:
         print(f"Photon fallback failed for {key}: {e}")
@@ -123,27 +123,20 @@ def batch_geocode(companies: List[Any]):
     unique_cities_to_geocode = set()
     for company in companies:
         # Check both attribute and dict access to be safe
-        state = ""
-        if hasattr(company, "state"):
-            state = company.state
-        elif isinstance(company, dict):
-            state = company.get("state") or company.get("State")
-
+        state = getattr(company, "state", None) or (company.get("State") if isinstance(company, dict) else None)
         state = (state or "").lower()
 
         if state in nrw_variants:
-            city = ""
-            country = ""
-            if hasattr(company, "city"):
-                city = company.city
-                country = company.country
-            elif isinstance(company, dict):
-                city = company.get("city") or company.get("City")
-                country = company.get("country") or company.get("Land")
+            city = getattr(company, "city", None) or (company.get("City") if isinstance(company, dict) else None)
+            country = getattr(company, "country", None) or (company.get("Land") if isinstance(company, dict) else None)
 
             if city:
                 unique_cities_to_geocode.add((city.strip(), country or "Germany"))
 
     # Pre-geocode unique locations
-    for city, country in unique_cities_to_geocode:
-        get_coordinates(city, country)
+    if unique_cities_to_geocode:
+        for city, country in unique_cities_to_geocode:
+            get_coordinates(city, country)
+
+        # Save cache once after batch
+        save_cache(_geo_cache)

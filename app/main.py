@@ -38,7 +38,12 @@ if "db_manager" not in st.session_state:
     if "geocoding_started" not in st.session_state:
         all_companies = st.session_state.db_manager.get_all_companies()
         nrw_variants = ["nrw", "nordrhein-westfalen", "north rhine-westphalia"]
-        nrw_companies = [c for c in all_companies if (c.state if hasattr(c, "state") else c.get("State", "")).lower() in nrw_variants]
+
+        def is_nrw(c):
+            state = getattr(c, "state", None) or (c.get("State") if isinstance(c, dict) else None)
+            return (state or "").lower() in nrw_variants
+
+        nrw_companies = [c for c in all_companies if is_nrw(c)]
 
         thread = threading.Thread(target=batch_geocode, args=(nrw_companies,), daemon=True)
         thread.start()
