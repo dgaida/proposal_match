@@ -151,7 +151,7 @@ class MatchingService:
             where_doc = {"$contains": keywords}
 
         # Step 2: Semantic search in ChromaDB with pre-filtering
-        print(f"Hybrid Search Execution:")
+        print("Hybrid Search Execution:")
         print(f"  Query: {query}")
         print(f"  Filters: {where_filter}")
         print(f"  Keywords: {keywords}")
