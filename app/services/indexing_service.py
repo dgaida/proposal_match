@@ -48,7 +48,7 @@ class IndexingService:
             scraper_result = self.scraper_service.fetch_page_content(link)
             if scraper_result:
                 content = scraper_result["text"]
-                final_url = scraper_result["final_url"]
+                final_url = scraper_result["final_url"].rstrip('/')
 
                 # Check if final URL is already indexed
                 if self.db_manager.is_url_indexed(final_url):

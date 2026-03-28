@@ -148,17 +148,24 @@ class MatchingService:
         vector_results = self.vector_store.query_companies(query_text=query, n_results=limit, where=where_filter)
 
         # Extract the results from the vector store response
-        company_ids = vector_results.get("ids", [[]])[0]
+        # Normalize IDs (strip trailing slashes) to ensure match with SQLite
+        raw_ids = vector_results.get("ids", [[]])[0]
+        company_ids = [url.rstrip('/') for url in raw_ids]
         distances = vector_results.get("distances", [[]])[0]
 
         # Step 3: Fetch full metadata from SQLite for the results
         # We use Company.url.in_(company_ids) to perform a batch retrieval using the SQLAlchemy IN operator.
         # This efficiently fetches all Company records whose URL matches any of the IDs returned by the vector search.
+        print(f"Vector search returned {len(company_ids)} company IDs.")
         session = self.db_manager.Session()
-        results = session.query(Company).filter(Company.url.in_(company_ids)).all()
+        # To be absolutely robust, we search for IDs both with and without trailing slashes
+        query_ids = company_ids + [url + '/' for url in company_ids]
+        results = session.query(Company).filter(Company.url.in_(query_ids)).all()
+        print(f"Successfully retrieved {len(results)} companies from SQLite.")
 
         # Maintain vector search order (relevance) and include scores
-        id_to_result = {r.url: r for r in results}
+        # Store results using normalized URL as key
+        id_to_result = {r.url.rstrip('/'): r for r in results}
         id_to_distance = dict(zip(company_ids, distances))
 
         final_results = []
