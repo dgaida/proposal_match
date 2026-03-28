@@ -18,8 +18,14 @@ A comprehensive tool to analyze research calls, find funding opportunities, and 
 3.  **Company Indexing**: Index company information from URLs. The app crawls websites to extract metadata (SME status, location, industry) and semantic information (summary, products).
 4.  **Hybrid Matching**: Match indexed companies to specific research calls using a combination of SQL filtering and semantic vector search (ChromaDB).
 5.  **External Discovery**: Search the internet for new potential partners and index them with one click.
-6.  **LinkedIn Integration**: Fetch 1st-degree LinkedIn contacts, match them to research calls, and generate personalized outreach messages.
+6.  **LinkedIn Integration**: Fetch 1st-degree LinkedIn contacts, match them to research calls, and generate personalized outreach messages. (Note: Currently restricted by LinkedIn's anti-scraping measures).
 7.  **Configurable Limits**: Set custom limits for LinkedIn contact retrieval and recursive folder indexing to optimize performance.
+8.  **Multi-Language Support**: Choose between German and English (default is German). AI-generated content (summaries, etc.) will remain in German.
+
+## Documentation
+- **[Usage Guide](docs/usage.md)**: Overview of app navigation and features.
+- **[Architecture Documentation](docs/architecture.md)**: Detailed description of services and utilities.
+- **[API Documentation](docs/api/)**: Automatically generated API documentation (generated as Markdown files in the `docs/api/` folder).
 
 ## Installation
 
@@ -62,6 +68,11 @@ This app is configured for easy deployment on [Render](https://render.com).
 - **Scraping**: BeautifulSoup4 & httpx
 - **Discovery**: DuckDuckGo Search
 - **Networking**: `linkedin_api`
+
+## Development & CI/CD
+- **Testing**: Run unit tests with `PYTHONPATH=. python -m pytest tests/`.
+- **Linting**: Check code quality with `ruff check app/`.
+- **API Docs**: API documentation is automatically generated via GitHub Actions and saved to the `docs/api/` folder.
 
 ## License
 MIT
