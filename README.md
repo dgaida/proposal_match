@@ -9,6 +9,7 @@ A comprehensive tool to analyze research calls, find funding opportunities, and 
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/dgaida/proposal_match/graphs/commit-activity)
 ![Last commit](https://img.shields.io/github/last-commit/dgaida/proposal_match)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://dgaida.github.io/proposal_match/)
 
 
 ## Features
