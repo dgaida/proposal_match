@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from typing import Optional, Tuple, Dict
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut
@@ -50,7 +51,9 @@ def get_coordinates(city: str, country: str = "Germany") -> Optional[Tuple[float
         return tuple(cache[key])
 
     try:
-        geolocator = Nominatim(user_agent="funding_research_app")
+        # Respect Nominatim usage policy: 1 second delay between non-cached requests
+        time.sleep(1)
+        geolocator = Nominatim(user_agent="funding_research_app", timeout=10)
         location = geolocator.geocode(key)
         if location:
             coords = (location.latitude, location.longitude)
