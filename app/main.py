@@ -417,6 +417,8 @@ with tab4:
         st.session_state.current_matches = []
     if "current_topics" not in st.session_state:
         st.session_state.current_topics = []
+    if "last_queries" not in st.session_state:
+        st.session_state.last_queries = []
 
     search_mode = st.radio(
         "Suchmodus wählen",
@@ -469,29 +471,29 @@ with tab4:
     with col_btn1:
         if st.button("Organisationen finden"):
             with st.spinner("Suche läuft..."):
-                query = ""
+                queries = []
                 if search_mode == "Automatische Zuordnung (Call-basiert)" and current_call_data:
                     # Query generation and caching
                     queries_dir = "data/queries"
                     os.makedirs(queries_dir, exist_ok=True)
-                    query_cache_path = os.path.join(queries_dir, f"{call_name}.txt")
+                    query_cache_path = os.path.join(queries_dir, f"{call_name}_multiple.json")
 
                     if os.path.exists(query_cache_path):
                         with open(query_cache_path, "r", encoding="utf-8") as f:
-                            query = f.read().strip()
+                            queries = json.load(f)
                     else:
-                        query = matcher.generate_matching_query(current_call_data)
+                        queries = matcher.generate_multiple_matching_queries(current_call_data, n=5)
                         with open(query_cache_path, "w", encoding="utf-8") as f:
-                            f.write(query)
-                elif search_mode == "Manuelle Hybrid-Suche":
-                    query = manual_query
-                    if not current_call_data and query:
-                        current_call_data = {"Thema": query, "Beschreibung": f"Manuelle Suche nach: {query}"}
+                            json.dump(queries, f, ensure_ascii=False)
+                elif search_mode == "Manuelle Hybrid-Suche" and manual_query:
+                    # Optimize manual query first
+                    optimized_query = matcher.rephrase_query(manual_query)
+                    queries = matcher.generate_multiple_matching_queries(optimized_query, n=5)
+                    if not current_call_data:
+                        current_call_data = {"Thema": manual_query, "Beschreibung": f"Manuelle Suche nach: {manual_query}"}
 
-                if query:
-                    if search_mode == "Automatische Zuordnung (Call-basiert)":
-                        st.info(f"Generierte Suchanfrage: {query}")
-
+                if queries:
+                    st.session_state.last_queries = queries
                     filters = {}
                     if country_filter != "Alle":
                         filters["country"] = country_filter
@@ -504,10 +506,22 @@ with tab4:
                         else:
                             filters["org_type"] = org_type_filter
 
-                    matches = matcher.hybrid_search(query, filters=filters, limit=10)
+                    # Aggregate results from all queries
+                    all_matches_dict = {}
+                    for q in queries:
+                        query_matches = matcher.hybrid_search(q, filters=filters, limit=10)
+                        for m in query_matches:
+                            url = m['url']
+                            if url not in all_matches_dict or m['relevance'] > all_matches_dict[url]['relevance']:
+                                all_matches_dict[url] = m
+
+                    # Sort by relevance
+                    matches = sorted(all_matches_dict.values(), key=lambda x: x['relevance'], reverse=True)
+
                     if matches:
                         if current_call_data:
-                            matches = matcher.generate_match_justification(current_call_data, matches)
+                            # Use top matches for justification to save tokens if there are many
+                            matches = matcher.generate_match_justification(current_call_data, matches[:10])
                         st.session_state.current_matches = matches
                     else:
                         st.session_state.current_matches = []
@@ -533,10 +547,16 @@ with tab4:
                 st.warning("Bitte wählen Sie einen Call aus oder geben Sie einen Suchbegriff für den Kontext an.")
 
     # Unified Display
+    if st.session_state.last_queries:
+        st.write("### Verwendete Suchanfragen:")
+        for q in st.session_state.last_queries:
+            st.info(q)
+
     if st.session_state.current_matches:
         st.write("### Gefundene Organisationen:")
         for m in st.session_state.current_matches:
-            with st.expander(f"**{m['name']}** - {m.get('industry', 'N/A')} ({m.get('country', 'N/A')})"):
+            relevance_pct = f"{int(m.get('relevance', 0) * 100)}%"
+            with st.expander(f"**{m['name']}** - Relevance: {relevance_pct} - {m.get('industry', 'N/A')} ({m.get('country', 'N/A')})"):
                 if m.get('justification'):
                     st.write(f"**Begründung:** {m['justification']}")
                 st.write(f"**Zusammenfassung:** {m['summary']}")
@@ -550,6 +570,7 @@ with tab4:
                     else:
                         st.write("**Webseite:** N/A")
                     st.write(f"**Typ:** {m.get('org_type', 'N/A')}")
+                    st.write(f"**Stadt:** {m.get('city', 'N/A')}")
                 with col_info2:
                     st.write(f"**Mitarbeiter:** {m.get('employees_count', 'N/A')}")
                     st.write(f"**KMU Status:** {'Ja' if m.get('kmu_status') else 'Nein'}")
