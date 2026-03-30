@@ -2,6 +2,8 @@ import httpx
 import json
 from typing import List, Dict, Any, Optional, Callable
 from app.services.llm_service import LLMService
+from app.utils.json_utils import parse_llm_json_list
+
 
 class FITService:
     """Service for interacting with the FIT Uni Kassel research funding database.
@@ -13,7 +15,9 @@ class FITService:
         client (httpx.Client): The HTTP client for making API requests.
     """
 
-    def __init__(self, llm_service: LLMService, base_url: str = "https://fit.uni-kassel.de/api"):
+    def __init__(
+        self, llm_service: LLMService, base_url: str = "https://fit.uni-kassel.de/api"
+    ):
         """Initializes the FITService.
 
         Args:
@@ -25,7 +29,12 @@ class FITService:
         self.auth_url = "https://fit.uni-kassel.de/auth"
         self.client = httpx.Client(timeout=30)
 
-    def login(self, username: str, password: str, status_callback: Optional[Callable[[str], None]] = None) -> bool:
+    def login(
+        self,
+        username: str,
+        password: str,
+        status_callback: Optional[Callable[[str], None]] = None,
+    ) -> bool:
         """Authenticates with Keycloak to obtain an access token.
 
         Args:
@@ -43,14 +52,16 @@ class FITService:
             "client_id": "web",
             "username": username,
             "password": password,
-            "scope": "openid"
+            "scope": "openid",
         }
         try:
             token_url = f"{self.auth_url}/realms/FIT/protocol/openid-connect/token"
             response = self.client.post(token_url, data=data)
             if response.status_code == 200:
                 token_data = response.json()
-                self.client.headers.update({"Authorization": f"Bearer {token_data['access_token']}"})
+                self.client.headers.update(
+                    {"Authorization": f"Bearer {token_data['access_token']}"}
+                )
                 return True
             else:
                 print(f"Login failed: {response.status_code} {response.text}")
@@ -59,7 +70,9 @@ class FITService:
             print(f"Error during login: {e}")
             return False
 
-    def search_calls(self, query: str, status_callback: Optional[Callable[[str], None]] = None) -> List[Dict[str, Any]]:
+    def search_calls(
+        self, query: str, status_callback: Optional[Callable[[str], None]] = None
+    ) -> List[Dict[str, Any]]:
         """Searches for research calls on FIT and uses LLM for relevance filtering.
 
         Args:
@@ -73,9 +86,9 @@ class FITService:
             status_callback(f"Searching for '{query}' on FIT...")
         params = {
             "search": query,
-            "pageSize": 20, # Fetch more to allow for filtering
+            "pageSize": 20,  # Fetch more to allow for filtering
             "sortBy": "updatedAt",
-            "descending": "true"
+            "descending": "true",
         }
         try:
             response = self.client.get(f"{self.base_url}/articles", params=params)
@@ -94,7 +107,9 @@ class FITService:
             print(f"Error searching FIT: {e}")
             return []
 
-    def _filter_relevant_calls(self, docs: List[Dict[str, Any]], query: str) -> List[Dict[str, Any]]:
+    def _filter_relevant_calls(
+        self, docs: List[Dict[str, Any]], query: str
+    ) -> List[Dict[str, Any]]:
         """Filters a list of documents for relevance to a query using an LLM.
 
         Args:
@@ -107,11 +122,13 @@ class FITService:
         # Prepare data for LLM
         simplified_docs = []
         for i, d in enumerate(docs):
-            simplified_docs.append({
-                "id": i,
-                "title": d.get('title') or d.get('englishTitle'),
-                "description": d.get('shortDescription') or d.get('description')
-            })
+            simplified_docs.append(
+                {
+                    "id": i,
+                    "title": d.get("title") or d.get("englishTitle"),
+                    "description": d.get("shortDescription") or d.get("description"),
+                }
+            )
 
         prompt = f"""
         Below is a list of research funding calls fetched from a database for the query: "{query}".
@@ -126,24 +143,32 @@ class FITService:
         """
 
         messages = [
-            {"role": "system", "content": "You are an expert at filtering research funding opportunities for relevance."},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "You are an expert at filtering research funding opportunities for relevance.",
+            },
+            {"role": "user", "content": prompt},
         ]
 
         try:
             response = self.llm_service.chat_completion(messages)
-            # Basic cleanup in case of extra text
-            start_index = response.find("[")
-            end_index = response.rfind("]") + 1
-            if start_index != -1 and end_index != -1:
-                relevant_ids = json.loads(response[start_index:end_index])
-                return [docs[i] for i in relevant_ids if i < len(docs)]
-            return docs[:10] # Fallback to first 10 if parsing fails
+            relevant_ids = parse_llm_json_list(response)
+            if relevant_ids is not None:
+                return [
+                    docs[i]
+                    for i in relevant_ids
+                    if isinstance(i, int) and i < len(docs)
+                ]
+            return docs[:10]  # Fallback to first 10 if parsing fails
         except Exception as e:
             print(f"Error filtering FIT calls: {e}")
             return docs[:10]
 
-    def summarize_results(self, results: List[Dict[str, Any]], status_callback: Optional[Callable[[str], None]] = None) -> str:
+    def summarize_results(
+        self,
+        results: List[Dict[str, Any]],
+        status_callback: Optional[Callable[[str], None]] = None,
+    ) -> str:
         """Generates a summary of research funding results using an LLM.
 
         Args:
@@ -159,10 +184,12 @@ class FITService:
         if not results:
             return "Keine relevanten Ergebnisse gefunden."
 
-        formatted_results = "\n\n".join([
-            f"Title: {r.get('title') or r.get('englishTitle')}\nDescription: {r.get('shortDescription') or r.get('description')}"
-            for r in results
-        ])
+        formatted_results = "\n\n".join(
+            [
+                f"Title: {r.get('title') or r.get('englishTitle')}\nDescription: {r.get('shortDescription') or r.get('description')}"
+                for r in results
+            ]
+        )
 
         prompt = f"""
         Below are search results from a research funding database.
@@ -175,8 +202,11 @@ class FITService:
         """
 
         messages = [
-            {"role": "system", "content": "You are an assistant summarizing research funding opportunities."},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "You are an assistant summarizing research funding opportunities.",
+            },
+            {"role": "user", "content": prompt},
         ]
 
         return self.llm_service.chat_completion(messages)

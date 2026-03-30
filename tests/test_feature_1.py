@@ -2,6 +2,7 @@ from unittest.mock import patch
 from app.services.scraper_service import ScraperService
 from app.services.analyzer_service import AnalyzerService
 
+
 def test_scraper_service():
     """
     Verifies that ScraperService can fetch content from a URL.
@@ -9,7 +10,9 @@ def test_scraper_service():
     with patch("httpx.Client.get") as mock_get:
         # Arrange
         mock_get.return_value.status_code = 200
-        mock_get.return_value.content = b"<html><body><h1>Test Title</h1><p>Test Content</p></body></html>"
+        mock_get.return_value.content = (
+            b"<html><body><h1>Test Title</h1><p>Test Content</p></body></html>"
+        )
 
         scraper_service = ScraperService()
         url = "https://example.com/research-call"
@@ -23,6 +26,7 @@ def test_scraper_service():
         assert "Test Content" in result["text"]
         print("ScraperService test passed.")
 
+
 def test_analyzer_service():
     """
     Verifies that AnalyzerService can extract structured data using the LLM.
@@ -30,7 +34,9 @@ def test_analyzer_service():
     with patch("app.services.llm_service.LLMService") as MockLLMService:
         # Arrange
         mock_llm_service_instance = MockLLMService.return_value
-        mock_llm_service_instance.extract_structured_data.return_value = '{"Thema": "AI in Healthcare", "Deadline": "2026-12-31"}'
+        mock_llm_service_instance.extract_structured_data.return_value = (
+            '{"Thema": "AI in Healthcare", "Deadline": "2026-12-31"}'
+        )
 
         analyzer_service = AnalyzerService(mock_llm_service_instance)
         text = "AI in Healthcare. Deadline: 2026-12-31"
@@ -40,9 +46,10 @@ def test_analyzer_service():
 
         # Assert
         assert result is not None
-        assert result["Thema"] == "AI in Healthcare"
-        assert result["Deadline"] == "2026-12-31"
+        assert result.thema == "AI in Healthcare"
+        assert result.deadline == "2026-12-31"
         print("AnalyzerService test passed.")
+
 
 if __name__ == "__main__":
     test_scraper_service()

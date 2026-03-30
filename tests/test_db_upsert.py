@@ -1,6 +1,7 @@
 import os
 from app.utils.db_manager import DBManager
 
+
 def test_db_upsert():
     """
     Verifies that DBManager handles upsert logic and URL normalization.
@@ -16,7 +17,7 @@ def test_db_upsert():
     company1 = {
         "name": "Test Company",
         "url": "https://example.com/",
-        "country": "Germany"
+        "country": "Germany",
     }
     db_manager.add_company(company1)
 
@@ -29,7 +30,7 @@ def test_db_upsert():
     company2 = {
         "name": "Test Company Updated",
         "url": "https://example.com",
-        "country": "Germany"
+        "country": "Germany",
     }
     db_manager.add_company(company2)
 

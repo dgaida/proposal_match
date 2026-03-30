@@ -1,6 +1,8 @@
 import os
 import chromadb
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union
+from app.models.models import CompanyModel
+
 
 class VectorStore:
     """Manages semantic vector storage and querying using ChromaDB.
@@ -21,21 +23,30 @@ class VectorStore:
         self.client = chromadb.PersistentClient(path=persist_directory)
         self.collection = self.client.get_or_create_collection(name="companies")
 
-    def add_company_vector(self, company_id: str, text: str, metadata: Dict[str, Any]) -> None:
+    def add_company_vector(
+        self, company_id: str, text: str, metadata: Union[Dict[str, Any], CompanyModel]
+    ) -> None:
         """Upserts a company's vector embedding and metadata.
 
         Args:
             company_id (str): Unique ID (usually URL).
             text (str): Semantic text to be embedded.
-            metadata (Dict[str, Any]): Associated metadata for filtering.
+            metadata (Union[Dict[str, Any], CompanyModel]): Associated metadata for filtering.
         """
+        if isinstance(metadata, CompanyModel):
+            metadata = metadata.model_dump()
+
         self.collection.upsert(
-            documents=[text],
-            metadatas=[metadata],
-            ids=[str(company_id)]
+            documents=[text], metadatas=[metadata], ids=[str(company_id)]
         )
 
-    def query_companies(self, query_text: str, n_results: int = 5, where: Optional[Dict[str, Any]] = None, where_document: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def query_companies(
+        self,
+        query_text: str,
+        n_results: int = 5,
+        where: Optional[Dict[str, Any]] = None,
+        where_document: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """Queries the vector store for similar companies using semantic search.
 
         Args:
@@ -51,5 +62,5 @@ class VectorStore:
             query_texts=[query_text],
             n_results=n_results,
             where=where,
-            where_document=where_document
+            where_document=where_document,
         )
