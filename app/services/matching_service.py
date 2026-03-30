@@ -4,6 +4,9 @@ from ddgs import DDGS
 from app.services.llm_service import LLMService
 from app.utils.db_manager import DBManager, Company
 from app.utils.vector_store import VectorStore
+from app.utils.json_utils import parse_llm_json_list
+from app.models.models import MatchResultModel, ProposalModel, ResearchCallModel
+
 
 class MatchingService:
     """Service for matching research calls with organizations in the database.
@@ -14,7 +17,9 @@ class MatchingService:
         vector_store (VectorStore): Manager for ChromaDB vector store.
     """
 
-    def __init__(self, llm_service: LLMService, db_manager: DBManager, vector_store: VectorStore):
+    def __init__(
+        self, llm_service: LLMService, db_manager: DBManager, vector_store: VectorStore
+    ):
         """Initializes the MatchingService.
 
         Args:
@@ -26,7 +31,12 @@ class MatchingService:
         self.db_manager = db_manager
         self.vector_store = vector_store
 
-    def suggest_research_topics(self, call_data: Dict[str, Any], user_context: str = "", matched_companies: List[Dict[str, Any]] = []) -> List[str]:
+    def suggest_research_topics(
+        self,
+        call_data: Dict[str, Any],
+        user_context: str = "",
+        matched_companies: List[Dict[str, Any]] = [],
+    ) -> List[str]:
         """Suggests 5 project ideas for a research call and potential partners.
 
         Args:
@@ -37,7 +47,12 @@ class MatchingService:
         Returns:
             List[str]: A list of suggested research topics and roles.
         """
-        companies_info = "\n".join([f"- {c['name']} (Industry: {c['industry']}): {c['summary']}" for c in matched_companies])
+        companies_info = "\n".join(
+            [
+                f"- {c['name']} (Industry: {c['industry']}): {c['summary']}"
+                for c in matched_companies
+            ]
+        )
 
         prompt = f"""
         Given the following research call information and the user's profile, suggest 5 concrete research topics or project ideas.
@@ -60,14 +75,23 @@ class MatchingService:
         Return the topics as a list with the additional information for each.
         """
         messages = [
-            {"role": "system", "content": "You are an expert in research and development strategy."},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "You are an expert in research and development strategy.",
+            },
+            {"role": "user", "content": prompt},
         ]
         response = self.llm_service.chat_completion(messages)
         # Simplified parsing for the suggestion list
-        return [line.strip("- ").strip("12345. ") for line in response.splitlines() if line.strip()]
+        return [
+            line.strip("- ").strip("12345. ")
+            for line in response.splitlines()
+            if line.strip()
+        ]
 
-    def generate_multiple_matching_queries(self, context_data: Any, n: int = 5) -> List[str]:
+    def generate_multiple_matching_queries(
+        self, context_data: Any, n: int = 5
+    ) -> List[str]:
         """Generates multiple diverse semantic search queries in German.
 
         Args:
@@ -77,7 +101,11 @@ class MatchingService:
         Returns:
             List[str]: A list of query strings for vector search.
         """
-        context_str = json.dumps(context_data) if isinstance(context_data, dict) else str(context_data)
+        context_str = (
+            json.dumps(context_data)
+            if isinstance(context_data, dict)
+            else str(context_data)
+        )
         prompt = f"""
         Given the following context, generate {n} diverse semantic search queries in GERMAN to find matching companies in a vector database.
         The companies in the database are described in German.
@@ -87,11 +115,16 @@ class MatchingService:
         Context: {context_str}
         """
         messages = [
-            {"role": "system", "content": "You are an expert in research funding and technical matchmaking. You respond only in German."},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "You are an expert in research funding and technical matchmaking. You respond only in German.",
+            },
+            {"role": "user", "content": prompt},
         ]
         response = self.llm_service.chat_completion(messages)
-        return [line.strip("- ").strip() for line in response.splitlines() if line.strip()]
+        return [
+            line.strip("- ").strip() for line in response.splitlines() if line.strip()
+        ]
 
     def rephrase_query(self, query: str) -> str:
         """Rephrases a manual query to be optimal for semantic search in German.
@@ -110,12 +143,21 @@ class MatchingService:
         Original query: {query}
         """
         messages = [
-            {"role": "system", "content": "You are an expert in information retrieval and semantic search."},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "You are an expert in information retrieval and semantic search.",
+            },
+            {"role": "user", "content": prompt},
         ]
         return self.llm_service.chat_completion(messages).strip('" \n')
 
-    def hybrid_search(self, query: str, filters: Optional[Dict[str, Any]] = None, keywords: Optional[str] = None, limit: int = 10) -> List[Dict[str, Any]]:
+    def hybrid_search(
+        self,
+        query: str,
+        filters: Optional[Dict[str, Any]] = None,
+        keywords: Optional[str] = None,
+        limit: int = 10,
+    ) -> List[MatchResultModel]:
         """Finds matching organizations using a hybrid vector-metadata search.
 
         Args:
@@ -125,7 +167,7 @@ class MatchingService:
             limit (int): Maximum number of results to return.
 
         Returns:
-            List[Dict[str, Any]]: A list of matching organization metadata including relevance scores.
+            List[MatchResultModel]: A list of matching organization models including relevance scores.
         """
         # Step 1: Prepare ChromaDB filter
         where_filter = None
@@ -171,12 +213,17 @@ class MatchingService:
             print(f"  Companies matching metadata filters in SQLite: {count}")
             session.close()
 
-        vector_results = self.vector_store.query_companies(query_text=query, n_results=limit, where=where_filter, where_document=where_doc)
+        vector_results = self.vector_store.query_companies(
+            query_text=query,
+            n_results=limit,
+            where=where_filter,
+            where_document=where_doc,
+        )
 
         # Extract the results from the vector store response
         # Normalize IDs (strip trailing slashes) to ensure match with SQLite
         raw_ids = vector_results.get("ids", [[]])[0]
-        company_ids = [url.rstrip('/') for url in raw_ids]
+        company_ids = [url.rstrip("/") for url in raw_ids]
         distances = vector_results.get("distances", [[]])[0]
 
         # Step 3: Fetch full metadata from SQLite for the results
@@ -185,13 +232,13 @@ class MatchingService:
         print(f"Vector search returned {len(company_ids)} company IDs.")
         session = self.db_manager.Session()
         # To be absolutely robust, we search for IDs both with and without trailing slashes
-        query_ids = company_ids + [url + '/' for url in company_ids]
+        query_ids = company_ids + [url + "/" for url in company_ids]
         results = session.query(Company).filter(Company.url.in_(query_ids)).all()
         print(f"Successfully retrieved {len(results)} companies from SQLite.")
 
         # Maintain vector search order (relevance) and include scores
         # Store results using normalized URL as key
-        id_to_result = {r.url.rstrip('/'): r for r in results}
+        id_to_result = {r.url.rstrip("/"): r for r in results}
         id_to_distance = dict(zip(company_ids, distances))
 
         final_results = []
@@ -203,39 +250,59 @@ class MatchingService:
                 # ChromaDB distances are often L2; 1/(1+dist) is a common heuristic
                 relevance = 1.0 / (1.0 + dist)
 
-                final_results.append({
-                    "name": r.name,
-                    "url": r.url,
-                    "state": r.state,
-                    "city": r.city,
-                    "country": r.country,
-                    "org_type": r.org_type,
-                    "industry": r.industry,
-                    "summary": r.summary,
-                    "employees_count": r.employees_count,
-                    "kmu_status": r.kmu_status,
-                    "relevance": relevance
-                })
+                final_results.append(
+                    MatchResultModel(
+                        name=r.name,
+                        url=r.url,
+                        state=r.state,
+                        city=r.city,
+                        country=r.country,
+                        org_type=r.org_type,
+                        industry=r.industry,
+                        summary=r.summary,
+                        employees_count=r.employees_count,
+                        kmu_status=r.kmu_status,
+                        relevance=relevance,
+                    )
+                )
 
         session.close()
         return final_results
 
-    def generate_detailed_proposals(self, call_data: Dict[str, Any], user_context: str = "", matched_companies: List[Dict[str, Any]] = [], status_callback: Optional[Callable[[str], None]] = None) -> List[Dict[str, Any]]:
+    def generate_detailed_proposals(
+        self,
+        call_data: ResearchCallModel | Dict[str, Any],
+        user_context: str = "",
+        matched_companies: List[MatchResultModel] = [],
+        status_callback: Optional[Callable[[str], None]] = None,
+    ) -> List[ProposalModel]:
         """Generates 5 detailed project proposals with missing partner discovery.
 
         Args:
-            call_data (Dict[str, Any]): Data about the research call.
+            call_data (ResearchCallModel | Dict[str, Any]): Data about the research call.
             user_context (str): The background of the user.
-            matched_companies (List[Dict[str, Any]]): A list of companies that already match the call.
+            matched_companies (List[MatchResultModel]): A list of companies that already match the call.
             status_callback (Optional[Callable[[str], None]]): Callback for status updates.
 
         Returns:
-            List[Dict[str, Any]]: A list of detailed project proposals.
+            List[ProposalModel]: A list of detailed project proposals.
         """
         if status_callback:
-            status_callback("Generiere Projektideen und Suchanfragen für fehlende Partner...")
+            status_callback(
+                "Generiere Projektideen und Suchanfragen für fehlende Partner..."
+            )
 
-        companies_info = "\n".join([f"- {c['name']} (Branche: {c['industry']}): {c['summary']}" for c in matched_companies])
+        companies_info = "\n".join(
+            [
+                f"- {c.name} (Branche: {c.industry}): {c.summary}"
+                for c in matched_companies
+            ]
+        )
+        call_json = (
+            call_data.model_dump()
+            if isinstance(call_data, ResearchCallModel)
+            else call_data
+        )
 
         prompt = f"""
         Basierend auf dem folgenden Forschungs-Call und dem Profil des Nutzers, erstelle 5 konkrete Projektideen (Vorschläge).
@@ -245,7 +312,7 @@ class MatchingService:
         {user_context}
 
         Call-Daten:
-        {json.dumps(call_data)}
+        {json.dumps(call_json)}
 
         Bereits gefundene Partner aus der Datenbank:
         {companies_info}
@@ -283,70 +350,80 @@ class MatchingService:
         """
 
         messages = [
-            {"role": "system", "content": "Du bist ein Experte für Forschungsförderung und Konsortialbildung. Du antwortest nur in validem JSON."},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "Du bist ein Experte für Forschungsförderung und Konsortialbildung. Du antwortest nur in validem JSON.",
+            },
+            {"role": "user", "content": prompt},
         ]
 
         response = self.llm_service.chat_completion(messages)
-        try:
-            # Clean up potential markdown blocks
-            clean_response = response.strip()
-            if clean_response.startswith("```json"):
-                clean_response = clean_response[7:]
-            if clean_response.endswith("```"):
-                clean_response = clean_response[:-3]
-
-            proposals = json.loads(clean_response)
-            print(f"Generated {len(proposals)} detailed project proposals.")
-        except Exception as e:
-            print(f"Failed to parse proposals JSON: {e}")
-            print(f"Raw response: {response}")
+        proposals_data = parse_llm_json_list(response)
+        if not proposals_data:
             return []
 
         final_proposals = []
-        for i, prop in enumerate(proposals):
-            if status_callback:
-                status_callback(f"Suche Partner für Projekt {i+1}/5: {prop.get('title')}...")
+        for i, prop_dict in enumerate(proposals_data):
+            try:
+                # Basic validation with model_validate (without newly_found_partners yet)
+                prop = ProposalModel.model_validate(prop_dict)
+            except Exception as e:
+                print(f"Proposal validation failed for item {i}: {e}")
+                continue
 
-            found_partners_for_prop = []
+            if status_callback:
+                status_callback(
+                    f"Suche Partner für Projekt {i + 1}/{len(proposals_data)}: {prop.title}..."
+                )
+
+            found_partners = []
             seen_urls = set()
 
-            for missing_search in prop.get("missing_partners_search", []):
-                print(f"  - Missing Partner Request: {missing_search.get('type_description')}")
-                filters = missing_search.get("filters", {})
-                queries = missing_search.get("queries", [])
-                keywords = missing_search.get("keywords")
-                intended_role = missing_search.get("intended_role")
-
-                for q in queries:
-                    # Search for 3 companies per query as requested
-                    matches = self.hybrid_search(q, filters=filters, keywords=keywords, limit=3)
+            for missing_search in prop.missing_partners_search:
+                print(f"  - Missing Partner Request: {missing_search.type_description}")
+                for q in missing_search.queries:
+                    matches = self.hybrid_search(
+                        q,
+                        filters=missing_search.filters,
+                        keywords=missing_search.keywords,
+                        limit=3,
+                    )
                     for m in matches:
-                        if m['url'] not in seen_urls:
-                            m['project_role'] = intended_role
-                            found_partners_for_prop.append(m)
-                            seen_urls.add(m['url'])
+                        if m.url not in seen_urls:
+                            # We might want to store project_role somewhere,
+                            # but currently MatchResultModel doesn't have it.
+                            # Proposal integration is handled via the newly_found_partners list.
+                            found_partners.append(m)
+                            seen_urls.add(m.url)
 
-            # Sort found partners by relevance
-            found_partners_for_prop.sort(key=lambda x: x.get('relevance', 0), reverse=True)
-            prop['newly_found_partners'] = found_partners_for_prop
+            found_partners.sort(key=lambda x: x.relevance, reverse=True)
+            prop.newly_found_partners = found_partners
             final_proposals.append(prop)
 
         return final_proposals
 
-    def generate_match_justification(self, call_data: Dict[str, Any], matched_companies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def generate_match_justification(
+        self,
+        call_data: ResearchCallModel | Dict[str, Any],
+        matched_companies: List[MatchResultModel],
+    ) -> List[MatchResultModel]:
         """Generates a German justification for each matched organization.
 
         Args:
-            call_data (Dict[str, Any]): Data about the research call.
-            matched_companies (List[Dict[str, Any]]): The list of matched organizations.
+            call_data (ResearchCallModel | Dict[str, Any]): Data about the research call.
+            matched_companies (List[MatchResultModel]): The list of matched organizations.
 
         Returns:
-            List[Dict[str, Any]]: The original list of companies updated with a 'justification' field.
+            List[MatchResultModel]: The original list of companies updated with a 'justification' field.
         """
         if not matched_companies:
             return []
 
+        call_json = (
+            call_data.model_dump()
+            if isinstance(call_data, ResearchCallModel)
+            else call_data
+        )
         results_with_justification = []
         for company in matched_companies:
             prompt = f"""
@@ -354,17 +431,19 @@ class MatchingService:
             explain in 2-3 sentences why this organization is a particularly good match for this call.
             BE BRIEF AND SPECIFIC. RESPOND IN GERMAN.
 
-            Call: {json.dumps(call_data)}
-            Organization: {company['name']} ({company['org_type']}) - {company['summary']}
+            Call: {json.dumps(call_json)}
+            Organization: {company.name} ({company.org_type}) - {company.summary}
             """
             messages = [
-                {"role": "system", "content": "You are an expert in research collaborations."},
-                {"role": "user", "content": prompt}
+                {
+                    "role": "system",
+                    "content": "You are an expert in research collaborations.",
+                },
+                {"role": "user", "content": prompt},
             ]
             justification = self.llm_service.chat_completion(messages)
-            company_copy = company.copy()
-            company_copy['justification'] = justification
-            results_with_justification.append(company_copy)
+            company.justification = justification
+            results_with_justification.append(company)
 
         return results_with_justification
 
@@ -391,13 +470,20 @@ class MatchingService:
         Return only the 3 queries, one per line.
         """
         messages = [
-            {"role": "system", "content": "You are an expert at information retrieval and search engine optimization."},
-            {"role": "user", "content": query_prompt}
+            {
+                "role": "system",
+                "content": "You are an expert at information retrieval and search engine optimization.",
+            },
+            {"role": "user", "content": query_prompt},
         ]
 
         try:
             llm_response = self.llm_service.chat_completion(messages)
-            queries = [q.strip("- ").strip("123. ") for q in llm_response.splitlines() if q.strip()]
+            queries = [
+                q.strip("- ").strip("123. ")
+                for q in llm_response.splitlines()
+                if q.strip()
+            ]
             # Ensure we have at least the original topic if LLM fails
             if not queries:
                 queries = [topic]
@@ -406,7 +492,7 @@ class MatchingService:
             queries = [topic]
 
         # Step 2: Execute searches and collect results
-        companies = {} # Use dict to deduplicate by URL
+        companies = {}  # Use dict to deduplicate by URL
         with DDGS() as ddgs:
             for query in queries:
                 try:
@@ -418,7 +504,7 @@ class MatchingService:
                             companies[url] = {
                                 "name": r.get("title"),
                                 "url": url,
-                                "snippet": r.get("body")
+                                "snippet": r.get("body"),
                             }
                 except Exception as e:
                     print(f"Search failed for query '{query}': {e}")

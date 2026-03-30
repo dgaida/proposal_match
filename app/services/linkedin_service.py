@@ -3,6 +3,7 @@ from typing import List, Dict, Any, Optional, Callable
 from linkedin_api import Linkedin
 from app.services.llm_service import LLMService
 
+
 class LinkedInService:
     """Service for LinkedIn integration and contact matching.
 
@@ -11,7 +12,12 @@ class LinkedInService:
         api (Optional[Linkedin]): LinkedIn API instance or None if not initialized.
     """
 
-    def __init__(self, llm_service: LLMService, username: Optional[str] = None, password: Optional[str] = None):
+    def __init__(
+        self,
+        llm_service: LLMService,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+    ):
         """Initializes the LinkedInService.
 
         Args:
@@ -27,7 +33,9 @@ class LinkedInService:
             except Exception as e:
                 print(f"Failed to initialize LinkedIn API: {e}")
 
-    def get_first_degree_contacts(self, limit: int = -1, status_callback: Optional[Callable[[str], None]] = None) -> List[Dict[str, Any]]:
+    def get_first_degree_contacts(
+        self, limit: int = -1, status_callback: Optional[Callable[[str], None]] = None
+    ) -> List[Dict[str, Any]]:
         """Fetches 1st-degree contacts from the LinkedIn account.
 
         Args:
@@ -44,18 +52,22 @@ class LinkedInService:
 
         try:
             if status_callback:
-                status_callback("Fetching 1st-degree contacts from LinkedIn (this may take a while)...")
+                status_callback(
+                    "Fetching 1st-degree contacts from LinkedIn (this may take a while)..."
+                )
             print("LinkedIn: Fetching 1st-degree contacts...")
 
             # Using search_people with network_depths=['F'] for 1st-degree contacts.
-            connections = self.api.search_people(network_depths=['F'], limit=limit)
+            connections = self.api.search_people(network_depths=["F"], limit=limit)
 
             if status_callback:
                 status_callback(f"Successfully fetched {len(connections)} contacts.")
             print(f"LinkedIn: Successfully fetched {len(connections)} contacts.")
 
             # Print contact names comma-separated
-            contact_names = [f"{c.get('firstName')} {c.get('lastName')}" for c in connections]
+            contact_names = [
+                f"{c.get('firstName')} {c.get('lastName')}" for c in connections
+            ]
             print(f"LinkedIn Contacts: {', '.join(contact_names)}")
 
             return connections
@@ -66,37 +78,50 @@ class LinkedInService:
             print(f"LinkedIn: {msg}")
             return []
 
-    def generate_outreach_message(self, contact_name: str, company_name: str, call_data: Dict[str, Any]) -> str:
+    def generate_outreach_message(
+        self, contact_name: str, company_name: str, call_data: Any
+    ) -> str:
         """Generates a professional outreach message via LLM.
 
         Args:
             contact_name (str): Full name of the contact.
             company_name (str): The organization they are associated with.
-            call_data (Dict[str, Any]): Data about the research call for context.
+            call_data (Any): Data about the research call for context.
 
         Returns:
             str: The generated outreach text.
         """
+        call_json = (
+            call_data.model_dump() if hasattr(call_data, "model_dump") else call_data
+        )
         prompt = f"""
         Generate a professional and personalized LinkedIn outreach message for my contact {contact_name}
         who works at or is associated with {company_name}.
         I want to propose a collaboration for the following research call:
-        {json.dumps(call_data)}
+        {json.dumps(call_json)}
 
         The message should be brief, engaging, and encourage a follow-up meeting.
         """
         messages = [
-            {"role": "system", "content": "You are a professional networker and research collaboration expert."},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "You are a professional networker and research collaboration expert.",
+            },
+            {"role": "user", "content": prompt},
         ]
         return self.llm_service.chat_completion(messages)
 
-    def find_matching_contacts_for_call(self, contacts: List[Dict[str, Any]], call_data: Dict[str, Any], status_callback: Optional[Callable[[str], None]] = None) -> Dict[str, Any]:
+    def find_matching_contacts_for_call(
+        self,
+        contacts: List[Dict[str, Any]],
+        call_data: Any,
+        status_callback: Optional[Callable[[str], None]] = None,
+    ) -> Dict[str, Any]:
         """Analyzes a list of LinkedIn contacts to find matches for a research call.
 
         Args:
             contacts (List[Dict[str, Any]]): The list of LinkedIn contacts to analyze.
-            call_data (Dict[str, Any]): The research call details.
+            call_data (Any): The research call details.
             status_callback (Optional[Callable[[str], None]]): Callback for status updates.
 
         Returns:
@@ -107,16 +132,28 @@ class LinkedInService:
 
         try:
             if status_callback:
-                status_callback(f"Analyzing {len(contacts)} contacts for matching with the research call...")
+                status_callback(
+                    f"Analyzing {len(contacts)} contacts for matching with the research call..."
+                )
             print(f"LinkedIn: Analyzing {len(contacts)} contacts for matching...")
 
-            contact_list_str = "\n".join([f"- {c.get('firstName')} {c.get('lastName')} (Headline: {c.get('occupation')})" for c in contacts])
+            call_json = (
+                call_data.model_dump()
+                if hasattr(call_data, "model_dump")
+                else call_data
+            )
+            contact_list_str = "\n".join(
+                [
+                    f"- {c.get('firstName')} {c.get('lastName')} (Headline: {c.get('occupation')})"
+                    for c in contacts
+                ]
+            )
 
             prompt = f"""
             Identify the most relevant LinkedIn contacts from the list below for the following research call.
             Also, provide a brief explanation of the criteria used for matching.
 
-            Call: {json.dumps(call_data)}
+            Call: {json.dumps(call_json)}
 
             Contacts:
             {contact_list_str}
@@ -130,8 +167,11 @@ class LinkedInService:
             """
 
             messages = [
-                {"role": "system", "content": "You are an expert at matching professionals to research opportunities."},
-                {"role": "user", "content": prompt}
+                {
+                    "role": "system",
+                    "content": "You are an expert at matching professionals to research opportunities.",
+                },
+                {"role": "user", "content": prompt},
             ]
 
             response = self.llm_service.chat_completion(messages)
@@ -144,13 +184,23 @@ class LinkedInService:
                 criteria_part = parts[0].replace("Criteria:", "").strip()
                 names_part = parts[1].strip()
                 criteria = criteria_part
-                matched_names = [line.strip("- ").strip() for line in names_part.splitlines() if line.strip()]
+                matched_names = [
+                    line.strip("- ").strip()
+                    for line in names_part.splitlines()
+                    if line.strip()
+                ]
             else:
                 # Fallback to previous logic if LLM didn't follow instructions perfectly
-                matched_names = [line.strip("- ").strip("12345. ") for line in response.splitlines() if line.strip()]
+                matched_names = [
+                    line.strip("- ").strip("12345. ")
+                    for line in response.splitlines()
+                    if line.strip()
+                ]
 
             if status_callback:
-                status_callback(f"LLM identified {len(matched_names)} potential matches. Filtering list...")
+                status_callback(
+                    f"LLM identified {len(matched_names)} potential matches. Filtering list..."
+                )
             print(f"LinkedIn: LLM identified {len(matched_names)} potential matches.")
 
             # Filter the original contact list
@@ -167,7 +217,7 @@ class LinkedInService:
             return {
                 "matches": matches,
                 "identified_names": matched_names,
-                "criteria": criteria
+                "criteria": criteria,
             }
         except Exception as e:
             msg = f"Error during contact matching: {e}"

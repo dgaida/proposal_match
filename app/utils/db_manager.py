@@ -1,9 +1,11 @@
 import os
 from sqlalchemy import Column, Integer, String, Boolean, Text, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
+from app.models.models import CompanyModel
 
 Base = declarative_base()
+
 
 class Company(Base):
     """SQLAlchemy model representing a company/organization.
@@ -23,7 +25,8 @@ class Company(Base):
         summary (str): Textual description.
         products (str): Description of products/services.
     """
-    __tablename__ = 'companies'
+
+    __tablename__ = "companies"
     id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=True)
     url = Column(String(255), unique=True, nullable=False)
@@ -37,6 +40,7 @@ class Company(Base):
     research_active = Column(Boolean)
     summary = Column(Text)
     products = Column(Text)
+
 
 class DBManager:
     """Manages SQLite database operations for companies using SQLAlchemy.
@@ -62,43 +66,59 @@ class DBManager:
     def _ensure_columns_exist(self) -> None:
         """Ensures that all model columns exist in the DB (handles migrations)."""
         from sqlalchemy import inspect, text
+
         inspector = inspect(self.engine)
-        if 'companies' in inspector.get_table_names():
-            columns = [c['name'] for c in inspector.get_columns('companies')]
+        if "companies" in inspector.get_table_names():
+            columns = [c["name"] for c in inspector.get_columns("companies")]
 
             with self.engine.connect() as conn:
-                if 'country' not in columns:
-                    conn.execute(text("ALTER TABLE companies ADD COLUMN country VARCHAR(100)"))
+                if "country" not in columns:
+                    conn.execute(
+                        text("ALTER TABLE companies ADD COLUMN country VARCHAR(100)")
+                    )
                     conn.commit()
-                if 'org_type' not in columns:
-                    conn.execute(text("ALTER TABLE companies ADD COLUMN org_type VARCHAR(100)"))
+                if "org_type" not in columns:
+                    conn.execute(
+                        text("ALTER TABLE companies ADD COLUMN org_type VARCHAR(100)")
+                    )
                     conn.commit()
 
-    def add_company(self, company_data: Dict[str, Any]) -> None:
+    def add_company(self, company_data: Union[Dict[str, Any], CompanyModel]) -> None:
         """Adds a new company or updates an existing one by URL.
 
         Args:
-            company_data (Dict[str, Any]): Dictionary of company metadata.
+            company_data (Union[Dict[str, Any], CompanyModel]): Dictionary or model of company metadata.
         """
+        if isinstance(company_data, CompanyModel):
+            company_data = company_data.model_dump()
+
         session = self.Session()
         company_data_copy = company_data.copy()
 
         # Normalize URL: strip trailing slash
-        if 'url' in company_data_copy:
-            company_data_copy['url'] = company_data_copy['url'].rstrip('/')
+        if "url" in company_data_copy:
+            company_data_copy["url"] = company_data_copy["url"].rstrip("/")
 
-        if company_data_copy.get('employees_count') and not isinstance(company_data_copy['employees_count'], int):
+        if company_data_copy.get("employees_count") and not isinstance(
+            company_data_copy["employees_count"], int
+        ):
             try:
-                company_data_copy['employees_count'] = int(company_data_copy['employees_count'])
+                company_data_copy["employees_count"] = int(
+                    company_data_copy["employees_count"]
+                )
             except (ValueError, TypeError):
-                company_data_copy['employees_count'] = None
+                company_data_copy["employees_count"] = None
 
         try:
             # Check if company with this URL already exists to avoid IntegrityError even with session.merge
             # as unique constraints on String(255) might behave differently with merge in some SQLite versions
             existing = None
-            if 'url' in company_data_copy:
-                existing = session.query(Company).filter(Company.url == company_data_copy['url']).first()
+            if "url" in company_data_copy:
+                existing = (
+                    session.query(Company)
+                    .filter(Company.url == company_data_copy["url"])
+                    .first()
+                )
 
             if existing:
                 for key, value in company_data_copy.items():
@@ -136,11 +156,11 @@ class DBManager:
         try:
             # Get all companies
             all_companies = session.query(Company).all()
-            seen_urls = {} # normalized_url -> id
+            seen_urls = {}  # normalized_url -> id
             to_delete = []
 
             for company in all_companies:
-                norm_url = (company.url or "").rstrip('/')
+                norm_url = (company.url or "").rstrip("/")
                 if norm_url in seen_urls:
                     # Duplicate found! Keep the one that might have more info (simple heuristic: higher ID if data is equal, or just the first seen)
                     # For now, let's just delete the newer one
@@ -149,7 +169,9 @@ class DBManager:
                     seen_urls[norm_url] = company.id
 
             if to_delete:
-                session.query(Company).filter(Company.id.in_(to_delete)).delete(synchronize_session=False)
+                session.query(Company).filter(Company.id.in_(to_delete)).delete(
+                    synchronize_session=False
+                )
                 session.commit()
                 return len(to_delete)
             return 0
@@ -171,28 +193,39 @@ class DBManager:
         if not url:
             return False
 
-        norm_url = url.rstrip('/')
+        norm_url = url.rstrip("/")
         session = self.Session()
-        exists = session.query(Company).filter(Company.url.like(norm_url + "%")).first() is not None
+        exists = (
+            session.query(Company).filter(Company.url.like(norm_url + "%")).first()
+            is not None
+        )
         # Better: check exactly for the normalized version or with slash
-        exists = session.query(Company).filter(
-            (Company.url == norm_url) | (Company.url == norm_url + '/')
-        ).first() is not None
+        exists = (
+            session.query(Company)
+            .filter((Company.url == norm_url) | (Company.url == norm_url + "/"))
+            .first()
+            is not None
+        )
         session.close()
         return exists
 
-    def update_companies(self, updated_data: List[Dict[str, Any]]) -> None:
+    def update_companies(
+        self, updated_data: List[Union[Dict[str, Any], CompanyModel]]
+    ) -> None:
         """Performs a batch update of company records.
 
         Args:
-            updated_data (List[Dict[str, Any]]): List of company data dicts (must include 'url').
+            updated_data (List[Union[Dict[str, Any], CompanyModel]]): List of company data dicts or models (must include 'url').
         """
         session = self.Session()
         try:
             for data in updated_data:
+                if isinstance(data, CompanyModel):
+                    data = data.model_dump()
+
                 # Assuming 'url' is the unique identifier for merging
-                if 'url' in data:
-                    url = data['url'].rstrip('/')
+                if "url" in data:
+                    url = data["url"].rstrip("/")
                     company = session.query(Company).filter(Company.url == url).first()
                     if company:
                         for key, value in data.items():

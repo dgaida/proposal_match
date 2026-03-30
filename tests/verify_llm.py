@@ -7,6 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from app.services.llm_service import LLMService
 
+
 def test_llm_service_initialization():
     """
     Verifies that LLMService can be initialized with a given provider.
@@ -25,6 +26,7 @@ def test_llm_service_initialization():
         MockLLMClient.assert_called_once_with(api_choice=provider, llm=llm_model)
         assert os.environ.get("OPENAI_API_KEY") == api_key
         print("LLMService initialization test passed.")
+
 
 def test_llm_service_chat_completion():
     """
@@ -45,6 +47,7 @@ def test_llm_service_chat_completion():
         assert response == "Mocked Response"
         mock_client_instance.chat_completion.assert_called_once_with(messages)
         print("LLMService chat completion test passed.")
+
 
 if __name__ == "__main__":
     test_llm_service_initialization()

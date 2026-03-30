@@ -2,6 +2,7 @@ import httpx
 from bs4 import BeautifulSoup
 from typing import Optional
 
+
 class ScraperService:
     """Service for scraping and cleaning web content.
 
@@ -41,7 +42,9 @@ class ScraperService:
 
                 # Basic cleaning
                 lines = (line.strip() for line in text.splitlines())
-                chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+                chunks = (
+                    phrase.strip() for line in lines for phrase in line.split("  ")
+                )
                 text = "\n".join(chunk for chunk in chunks if chunk)
 
                 return {"text": text, "final_url": final_url}

@@ -1,6 +1,7 @@
 import httpx
 from bs4 import BeautifulSoup
 
+
 def explore_fit():
     url = "https://fit.uni-kassel.de/home"
     print(f"Exploring {url}...")
@@ -22,6 +23,7 @@ def explore_fit():
         for link in links:
             if "login" in str(link).lower() or "anmelden" in str(link).lower():
                 print(f"Possible Login Link: {link.get('href')}")
+
 
 if __name__ == "__main__":
     explore_fit()

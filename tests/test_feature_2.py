@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 from app.services.fit_service import FITService
 
+
 def test_fit_service_login():
     """
     Verifies that FITService can authenticate with Keycloak.
@@ -22,6 +23,7 @@ def test_fit_service_login():
         assert fit_service.client.headers.get("Authorization") == "Bearer mock_token"
         print("FITService login test passed.")
 
+
 def test_fit_service_search():
     """
     Verifies that FITService can search for calls.
@@ -29,7 +31,9 @@ def test_fit_service_search():
     with patch("httpx.Client.get") as mock_get:
         # Arrange
         mock_get.return_value.status_code = 200
-        mock_get.return_value.json.return_value = {"docs": [{"title": "Test Call", "description": "This is a test call."}]}
+        mock_get.return_value.json.return_value = {
+            "docs": [{"title": "Test Call", "description": "This is a test call."}]
+        }
 
         fit_service = FITService(llm_service=MagicMock())
         query = "Test Query"
@@ -42,6 +46,7 @@ def test_fit_service_search():
         assert len(results) == 1
         assert results[0]["title"] == "Test Call"
         print("FITService search test passed.")
+
 
 if __name__ == "__main__":
     test_fit_service_login()

@@ -1,5 +1,6 @@
 from app.services.scraper_service import ScraperService
 
+
 def test_scraper_redirect():
     """
     Verifies that ScraperService correctly handles URL redirects.
@@ -10,7 +11,7 @@ def test_scraper_redirect():
     result = scraper.fetch_page_content(url)
 
     if result:
-        assert result['final_url'].rstrip('/') == "https://innovationlab.de"
+        assert result["final_url"].rstrip("/") == "https://innovationlab.de"
     else:
         # Fallback in case of network issues/timeout
         # This test might depend on external connectivity

@@ -3,6 +3,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, in
 from sqlalchemy.orm import declarative_base
 from app.utils.db_manager import DBManager
 
+
 def test_db_migration():
     """
     Verifies that DBManager handles legacy database migration by adding new columns.
@@ -18,8 +19,9 @@ def test_db_migration():
         os.remove(legacy_db_path)
 
     Base = declarative_base()
+
     class LegacyCompany(Base):
-        __tablename__ = 'companies'
+        __tablename__ = "companies"
         id = Column(Integer, primary_key=True)
         name = Column(String(255))
         url = Column(String(255), unique=True, nullable=False)
@@ -41,10 +43,10 @@ def test_db_migration():
 
     # 3. Verify that the columns now exist
     inspector = inspect(db_manager.engine)
-    columns = [c['name'] for c in inspector.get_columns('companies')]
+    columns = [c["name"] for c in inspector.get_columns("companies")]
 
-    assert 'country' in columns
-    assert 'org_type' in columns
+    assert "country" in columns
+    assert "org_type" in columns
 
     if os.path.exists(legacy_db_path):
         os.remove(legacy_db_path)

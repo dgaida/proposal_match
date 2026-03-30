@@ -20,6 +20,7 @@ _photon = Photon(user_agent=USER_AGENT, timeout=10)
 _nominatim_disabled = False
 _nominatim_lock = threading.Lock()
 
+
 def load_cache() -> Dict[str, Tuple[float, float]]:
     """Loads the geocoding cache from a JSON file."""
     global _geo_cache
@@ -37,6 +38,7 @@ def load_cache() -> Dict[str, Tuple[float, float]]:
                 return {}
     return {}
 
+
 def save_cache(cache: Dict[str, Tuple[float, float]]):
     """Saves the geocoding cache to a JSON file."""
     os.makedirs(os.path.dirname(CACHE_FILE), exist_ok=True)
@@ -44,7 +46,10 @@ def save_cache(cache: Dict[str, Tuple[float, float]]):
         with open(CACHE_FILE, "w", encoding="utf-8") as f:
             json.dump(cache, f, ensure_ascii=False, indent=4)
 
-def get_coordinates(city: str, country: str = "Germany", retries: int = 1, only_from_cache: bool = False) -> Optional[Tuple[float, float]]:
+
+def get_coordinates(
+    city: str, country: str = "Germany", retries: int = 1, only_from_cache: bool = False
+) -> Optional[Tuple[float, float]]:
     """Fetches GPS coordinates for a city with multiple strategies and fallbacks.
 
     Strategies:
@@ -84,14 +89,16 @@ def get_coordinates(city: str, country: str = "Germany", retries: int = 1, only_
                         _geo_cache[key] = coords
                         # save_cache(_geo_cache) # Moved out of hot path
                     return coords
-                break # Not found
+                break  # Not found
             except (GeocoderTimedOut, GeocoderServiceError) as e:
                 err_str = str(e)
                 if "429" in err_str:
-                    print("Nominatim rate limited (429). Switching to circuit breaker for this session.")
+                    print(
+                        "Nominatim rate limited (429). Switching to circuit breaker for this session."
+                    )
                     with _nominatim_lock:
                         _nominatim_disabled = True
-                    break # Trigger fallback
+                    break  # Trigger fallback
                 if attempt < retries:
                     time.sleep(2)
                     continue
@@ -99,7 +106,7 @@ def get_coordinates(city: str, country: str = "Germany", retries: int = 1, only_
 
     # Fallback Strategy: Photon (Komoot)
     try:
-        time.sleep(1.0) # Play nice with Photon too
+        time.sleep(1.0)  # Play nice with Photon too
         location = _photon.geocode(key)
         if location:
             coords = (location.latitude, location.longitude)
@@ -115,6 +122,7 @@ def get_coordinates(city: str, country: str = "Germany", retries: int = 1, only_
         _failed_keys.add(key)
     return None
 
+
 def batch_geocode(companies: List[Any]):
     """Background task to pre-geocode unique NRW company locations."""
     nrw_variants = ["nrw", "nordrhein-westfalen", "north rhine-westphalia"]
@@ -123,12 +131,18 @@ def batch_geocode(companies: List[Any]):
     unique_cities_to_geocode = set()
     for company in companies:
         # Check both attribute and dict access to be safe
-        state = getattr(company, "state", None) or (company.get("State") if isinstance(company, dict) else None)
+        state = getattr(company, "state", None) or (
+            company.get("State") if isinstance(company, dict) else None
+        )
         state = (state or "").lower()
 
         if state in nrw_variants:
-            city = getattr(company, "city", None) or (company.get("City") if isinstance(company, dict) else None)
-            country = getattr(company, "country", None) or (company.get("Land") if isinstance(company, dict) else None)
+            city = getattr(company, "city", None) or (
+                company.get("City") if isinstance(company, dict) else None
+            )
+            country = getattr(company, "country", None) or (
+                company.get("Land") if isinstance(company, dict) else None
+            )
 
             if city:
                 unique_cities_to_geocode.add((city.strip(), country or "Germany"))

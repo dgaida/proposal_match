@@ -232,8 +232,9 @@ translations = {
         "invalid_folder": "Invalid or empty folder path.",
         "all_duplicates_removed": "{count} duplicates removed.",
         "no_duplicates_found": "No duplicates found.",
-    }
+    },
 }
+
 
 def translate(key, lang="de", **kwargs):
     text = translations.get(lang, translations["de"]).get(key, key)
