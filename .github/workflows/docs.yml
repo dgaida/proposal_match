@@ -1,8 +1,9 @@
-name: Generate API Documentation
+name: Documentation
 
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   docs:
@@ -11,6 +12,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required for git-cliff and mike
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -20,26 +23,39 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install pydoc-markdown
+          pip install mkdocs-material mkdocstrings[python] mkdocs-mermaid2-plugin mkdocs-static-i18n interrogate git-cliff mike
           pip install -e .
 
-      - name: Generate API Docs
+      - name: Run Tests
         run: |
-          mkdir -p docs/api
-          PYTHONPATH=. pydoc-markdown -I . -m app.services.analyzer_service > docs/api/analyzer_service.md
-          PYTHONPATH=. pydoc-markdown -I . -m app.services.fit_service > docs/api/fit_service.md
-          PYTHONPATH=. pydoc-markdown -I . -m app.services.indexing_service > docs/api/indexing_service.md
-          PYTHONPATH=. pydoc-markdown -I . -m app.services.linkedin_service > docs/api/linkedin_service.md
-          PYTHONPATH=. pydoc-markdown -I . -m app.services.llm_service > docs/api/llm_service.md
-          PYTHONPATH=. pydoc-markdown -I . -m app.services.matching_service > docs/api/matching_service.md
-          PYTHONPATH=. pydoc-markdown -I . -m app.services.scraper_service > docs/api/scraper_service.md
-          PYTHONPATH=. pydoc-markdown -I . -m app.utils.db_manager > docs/api/db_manager.md
-          PYTHONPATH=. pydoc-markdown -I . -m app.utils.vector_store > docs/api/vector_store.md
+          PYTHONPATH=. pytest tests/
 
-      - name: Commit and push if changed
+      - name: Check API Doc Coverage
+        run: |
+          interrogate -vv app/
+          mkdir -p docs/assets
+          interrogate --generate-badge docs/assets/interrogate_badge.svg app/
+
+      - name: Generate Changelog
+        run: |
+          git-cliff --output CHANGELOG.md
+
+      - name: Configure Git
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/api
-          git commit -m "docs: auto-generate api documentation" || exit 0
+
+      - name: Build and Deploy Versioned Docs
+        run: |
+          # Fetch the current version from pyproject.toml
+          VERSION=$(grep -oP 'version = "\K[^"]+' pyproject.toml)
+
+          # Deploy with mike
+          mike deploy --push --update-aliases $VERSION latest
+          mike set-default --push latest
+
+      - name: Commit Quality Artifacts
+        run: |
+          git add CHANGELOG.md docs/assets/interrogate_badge.svg
+          git commit -m "docs: update changelog and quality metrics [skip ci]" || exit 0
           git push

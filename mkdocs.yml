@@ -1,0 +1,110 @@
+site_name: Funding Research App
+site_url: https://dgaida.github.io/proposal_match/
+repo_url: https://github.com/dgaida/proposal_match
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: de
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.code.annotate
+    - content.code.copy
+    - i18n.languages
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [.]
+          options:
+            docstring_style: google
+            show_root_heading: true
+            show_source: true
+  - mermaid2:
+      version: 10.0.0
+  - i18n:
+      docs_structure: folder
+      default_language: de
+      languages:
+        - locale: de
+          name: Deutsch
+          default: true
+        - locale: en
+          name: English
+      nav_translations:
+        en:
+          Overview: Overview
+          Getting Started: Getting Started
+          Installation: Installation
+          Configuration: Configuration
+          Usage: Usage
+          Architecture: Architecture
+          Development: Development
+          Troubleshooting: Troubleshooting
+          API Reference: API Reference
+          Development: Development
+          Style Guide: Style Guide
+          Metrics: Metrics
+  - mike:
+      alias_type: symlink
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+nav:
+  - Overview: index.md
+  - Getting Started: getting-started.md
+  - Installation: installation.md
+  - Configuration: configuration.md
+  - Usage: usage/index.md
+  - Architecture: architecture/index.md
+  - API Reference:
+      - Services: api/services.md
+      - Utils: api/utils.md
+      - Models: api/models.md
+  - Development:
+      - Style Guide: development/style-guide.md
+      - Metrics: development/metrics.md
+      - Changelog: development/changelog.md
+  - Troubleshooting: troubleshooting.md
+
+extra:
+  version:
+    provider: mike

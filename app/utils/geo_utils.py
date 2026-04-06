@@ -22,7 +22,12 @@ _nominatim_lock = threading.Lock()
 
 
 def load_cache() -> Dict[str, Tuple[float, float]]:
-    """Loads the geocoding cache from a JSON file."""
+    """
+    Loads the geocoding cache from a JSON file.
+
+    Returns:
+        Dict[str, Tuple[float, float]]: The loaded geocoding cache.
+    """
     global _geo_cache
     with _cache_lock:
         if _geo_cache:
@@ -40,7 +45,12 @@ def load_cache() -> Dict[str, Tuple[float, float]]:
 
 
 def save_cache(cache: Dict[str, Tuple[float, float]]):
-    """Saves the geocoding cache to a JSON file."""
+    """
+    Saves the geocoding cache to a JSON file.
+
+    Args:
+        cache (Dict[str, Tuple[float, float]]): The geocoding cache to save.
+    """
     os.makedirs(os.path.dirname(CACHE_FILE), exist_ok=True)
     with _cache_lock:
         with open(CACHE_FILE, "w", encoding="utf-8") as f:
@@ -50,12 +60,22 @@ def save_cache(cache: Dict[str, Tuple[float, float]]):
 def get_coordinates(
     city: str, country: str = "Germany", retries: int = 1, only_from_cache: bool = False
 ) -> Optional[Tuple[float, float]]:
-    """Fetches GPS coordinates for a city with multiple strategies and fallbacks.
+    """
+    Fetches GPS coordinates for a city with multiple strategies and fallbacks.
 
     Strategies:
     1. Local cache
     2. Nominatim (Primary, with circuit breaker)
     3. Photon (Fallback)
+
+    Args:
+        city (str): The city to geocode.
+        country (str): The country the city is in. Defaults to "Germany".
+        retries (int): Number of retries for the geocoding service. Defaults to 1.
+        only_from_cache (bool): If True, only search in the local cache. Defaults to False.
+
+    Returns:
+        Optional[Tuple[float, float]]: The (latitude, longitude) coordinates or None if not found.
     """
     global _nominatim_disabled
     if not city:
@@ -124,7 +144,12 @@ def get_coordinates(
 
 
 def batch_geocode(companies: List[Any]):
-    """Background task to pre-geocode unique NRW company locations."""
+    """
+    Background task to pre-geocode unique NRW company locations.
+
+    Args:
+        companies (List[Any]): List of company objects or dictionaries.
+    """
     nrw_variants = ["nrw", "nordrhein-westfalen", "north rhine-westphalia"]
 
     # Extract unique cities to geocode

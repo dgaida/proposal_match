@@ -5,14 +5,16 @@ from app.models.models import ResearchCallModel
 
 
 class AnalyzerService:
-    """Service for analyzing research call text and extracting structured metadata.
+    """
+    Service for analyzing research call text and extracting structured metadata.
 
     Attributes:
         llm_service (LLMService): The LLM service used for extraction.
     """
 
     def __init__(self, llm_service: LLMService):
-        """Initializes the AnalyzerService.
+        """
+        Initializes the AnalyzerService.
 
         Args:
             llm_service (LLMService): The LLM service to use.
@@ -25,7 +27,8 @@ class AnalyzerService:
         url: Optional[str] = None,
         status_callback: Optional[Callable[[str], None]] = None,
     ) -> Optional[ResearchCallModel]:
-        """Analyzes a research call using LLM to extract key details.
+        """
+        Analyzes a research call using LLM to extract key details.
 
         Args:
             text (str): The text content of the research call.

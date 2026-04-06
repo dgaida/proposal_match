@@ -3,7 +3,8 @@ from datetime import datetime
 
 
 def get_file_age_days(filepath: str) -> int:
-    """Calculates the age of a file in days.
+    """
+    Calculates the age of a file in days.
 
     Args:
         filepath (str): The path to the file.

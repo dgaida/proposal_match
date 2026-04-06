@@ -4,14 +4,16 @@ from typing import Optional
 
 
 class ScraperService:
-    """Service for scraping and cleaning web content.
+    """
+    Service for scraping and cleaning web content.
 
     Attributes:
         timeout (int): The HTTP request timeout in seconds.
     """
 
     def __init__(self, timeout: int = 30):
-        """Initializes the ScraperService with a timeout.
+        """
+        Initializes the ScraperService with a timeout.
 
         Args:
             timeout (int): The HTTP request timeout in seconds.
@@ -19,7 +21,8 @@ class ScraperService:
         self.timeout = timeout
 
     def fetch_page_content(self, url: str) -> Optional[dict]:
-        """Fetches the text content of a given URL and follows redirects.
+        """
+        Fetches the text content of a given URL and follows redirects.
 
         Args:
             url (str): The URL to fetch content from.

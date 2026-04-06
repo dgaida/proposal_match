@@ -4,7 +4,8 @@ from llm_client import LLMClient
 
 
 class LLMService:
-    """Service for interacting with various LLM providers using the LLMClient library.
+    """
+    Service for interacting with various LLM providers using the LLMClient library.
 
     Attributes:
         provider (str): The current LLM provider being used.
@@ -20,7 +21,8 @@ class LLMService:
         api_key: Optional[str] = None,
         llm_model: Optional[str] = None,
     ):
-        """Initializes the LLMService with a provider, API key, and model.
+        """
+        Initializes the LLMService with a provider, API key, and model.
 
         Args:
             provider (str): The LLM provider to use (e.g., 'openai', 'groq', 'gemini').
@@ -50,7 +52,8 @@ class LLMService:
         )
 
     def _set_env_key(self, provider: str, api_key: str) -> None:
-        """Sets the appropriate environment variable for the given provider.
+        """
+        Sets the appropriate environment variable for the given provider.
 
         Args:
             provider (str): The LLM provider name.
@@ -64,7 +67,8 @@ class LLMService:
             os.environ["GEMINI_API_KEY"] = api_key
 
     def chat_completion(self, messages: List[Dict[str, str]]) -> str:
-        """Sends a chat completion request to the current LLM provider.
+        """
+        Sends a chat completion request to the current LLM provider.
 
         Args:
             messages (List[Dict[str, str]]): A list of message dictionaries (role and content).
@@ -79,7 +83,8 @@ class LLMService:
         messages: List[Dict[str, str]],
         status_callback: Optional[Callable[[str], None]] = None,
     ) -> str:
-        """Sends a chat completion request with fallback to other available providers on failure.
+        """
+        Sends a chat completion request with fallback to other available providers on failure.
 
         Args:
             messages (List[Dict[str, str]]): A list of message dictionaries.
@@ -131,7 +136,8 @@ class LLMService:
         prompt: str,
         status_callback: Optional[Callable[[str], None]] = None,
     ) -> str:
-        """Uses the LLM to extract structured information from the provided text.
+        """
+        Uses the LLM to extract structured information from the provided text.
 
         Args:
             text (str): The source text to extract data from.
@@ -153,7 +159,8 @@ class LLMService:
     def switch_config(
         self, provider: str, api_key: str, llm_model: Optional[str] = None
     ) -> None:
-        """Dynamically switches the LLM provider, API key, and model.
+        """
+        Dynamically switches the LLM provider, API key, and model.
 
         Args:
             provider (str): The new LLM provider name.

@@ -236,6 +236,17 @@ translations = {
 }
 
 
-def translate(key, lang="de", **kwargs):
+def translate(key: str, lang: str = "de", **kwargs: Any) -> str:
+    """
+    Translates a key into the given language.
+
+    Args:
+        key (str): The translation key.
+        lang (str): The language code ('de' or 'en'). Defaults to 'de'.
+        **kwargs: Values for placeholder formatting in the translation string.
+
+    Returns:
+        str: The translated and formatted string.
+    """
     text = translations.get(lang, translations["de"]).get(key, key)
     return text.format(**kwargs)

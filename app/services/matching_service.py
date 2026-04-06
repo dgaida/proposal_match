@@ -9,7 +9,8 @@ from app.models.models import MatchResultModel, ProposalModel, ResearchCallModel
 
 
 class MatchingService:
-    """Service for matching research calls with organizations in the database.
+    """
+    Service for matching research calls with organizations in the database.
 
     Attributes:
         llm_service (LLMService): LLM service for analysis and generation.
@@ -20,7 +21,8 @@ class MatchingService:
     def __init__(
         self, llm_service: LLMService, db_manager: DBManager, vector_store: VectorStore
     ):
-        """Initializes the MatchingService.
+        """
+        Initializes the MatchingService.
 
         Args:
             llm_service (LLMService): The LLM service for logic.
@@ -37,7 +39,8 @@ class MatchingService:
         user_context: str = "",
         matched_companies: List[Dict[str, Any]] = [],
     ) -> List[str]:
-        """Suggests 5 project ideas for a research call and potential partners.
+        """
+        Suggests 5 project ideas for a research call and potential partners.
 
         Args:
             call_data (Dict[str, Any]): Data about the research call.
@@ -92,7 +95,8 @@ class MatchingService:
     def generate_multiple_matching_queries(
         self, context_data: Any, n: int = 5
     ) -> List[str]:
-        """Generates multiple diverse semantic search queries in German.
+        """
+        Generates multiple diverse semantic search queries in German.
 
         Args:
             context_data (Any): Data about the research call or a manual query string.
@@ -127,7 +131,8 @@ class MatchingService:
         ]
 
     def rephrase_query(self, query: str) -> str:
-        """Rephrases a manual query to be optimal for semantic search in German.
+        """
+        Rephrases a manual query to be optimal for semantic search in German.
 
         Args:
             query (str): The user's original search term.
@@ -158,7 +163,8 @@ class MatchingService:
         keywords: Optional[str] = None,
         limit: int = 10,
     ) -> List[MatchResultModel]:
-        """Finds matching organizations using a hybrid vector-metadata search.
+        """
+        Finds matching organizations using a hybrid vector-metadata search.
 
         Args:
             query (str): The semantic search query.
@@ -276,7 +282,8 @@ class MatchingService:
         matched_companies: List[MatchResultModel] = [],
         status_callback: Optional[Callable[[str], None]] = None,
     ) -> List[ProposalModel]:
-        """Generates 5 detailed project proposals with missing partner discovery.
+        """
+        Generates 5 detailed project proposals with missing partner discovery.
 
         Args:
             call_data (ResearchCallModel | Dict[str, Any]): Data about the research call.
@@ -407,7 +414,8 @@ class MatchingService:
         call_data: ResearchCallModel | Dict[str, Any],
         matched_companies: List[MatchResultModel],
     ) -> List[MatchResultModel]:
-        """Generates a German justification for each matched organization.
+        """
+        Generates a German justification for each matched organization.
 
         Args:
             call_data (ResearchCallModel | Dict[str, Any]): Data about the research call.
@@ -448,7 +456,8 @@ class MatchingService:
         return results_with_justification
 
     def search_internet_for_companies(self, topic: str) -> List[Dict[str, str]]:
-        """Searches the web for new companies matching a research topic.
+        """
+        Searches the web for new companies matching a research topic.
 
         Args:
             topic (str): The target topic or sector for discovery.
