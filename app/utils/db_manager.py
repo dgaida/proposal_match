@@ -8,7 +8,8 @@ Base = declarative_base()
 
 
 class Company(Base):
-    """SQLAlchemy model representing a company/organization.
+    """
+    SQLAlchemy model representing a company/organization.
 
     Attributes:
         id (int): Primary key.
@@ -43,7 +44,8 @@ class Company(Base):
 
 
 class DBManager:
-    """Manages SQLite database operations for companies using SQLAlchemy.
+    """
+    Manages SQLite database operations for companies using SQLAlchemy.
 
     Attributes:
         engine: SQLAlchemy engine.
@@ -51,7 +53,8 @@ class DBManager:
     """
 
     def __init__(self, db_url: str = "sqlite:///data/companies.db"):
-        """Initializes the database connection and ensures schema exists.
+        """
+        Initializes the database connection and ensures schema exists.
 
         Args:
             db_url (str): The database connection string.
@@ -64,7 +67,9 @@ class DBManager:
         self.Session = sessionmaker(bind=self.engine)
 
     def _ensure_columns_exist(self) -> None:
-        """Ensures that all model columns exist in the DB (handles migrations)."""
+        """
+        Ensures that all model columns exist in the DB (handles migrations).
+        """
         from sqlalchemy import inspect, text
 
         inspector = inspect(self.engine)
@@ -84,7 +89,8 @@ class DBManager:
                     conn.commit()
 
     def add_company(self, company_data: Union[Dict[str, Any], CompanyModel]) -> None:
-        """Adds a new company or updates an existing one by URL.
+        """
+        Adds a new company or updates an existing one by URL.
 
         Args:
             company_data (Union[Dict[str, Any], CompanyModel]): Dictionary or model of company metadata.
@@ -136,7 +142,8 @@ class DBManager:
             session.close()
 
     def get_all_companies(self) -> List[Company]:
-        """Retrieves all company records from the database.
+        """
+        Retrieves all company records from the database.
 
         Returns:
             List[Company]: List of SQLAlchemy Company objects.
@@ -147,7 +154,8 @@ class DBManager:
         return companies
 
     def deduplicate_companies(self) -> int:
-        """Removes duplicate company entries based on normalized URLs.
+        """
+        Removes duplicate company entries based on normalized URLs.
 
         Returns:
             int: The number of duplicates removed.
@@ -182,7 +190,8 @@ class DBManager:
             session.close()
 
     def is_url_indexed(self, url: str) -> bool:
-        """Checks if a URL has already been indexed in the database.
+        """
+        Checks if a URL has already been indexed in the database.
 
         Args:
             url (str): The URL to check.
@@ -212,7 +221,8 @@ class DBManager:
     def update_companies(
         self, updated_data: List[Union[Dict[str, Any], CompanyModel]]
     ) -> None:
-        """Performs a batch update of company records.
+        """
+        Performs a batch update of company records.
 
         Args:
             updated_data (List[Union[Dict[str, Any], CompanyModel]]): List of company data dicts or models (must include 'url').

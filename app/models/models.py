@@ -3,7 +3,9 @@ from typing import List, Optional, Dict, Any
 
 
 class CompanyModel(BaseModel):
-    """Pydantic model representing a company/organization."""
+    """
+    Pydantic model representing a company/organization.
+    """
 
     name: Optional[str] = None
     url: str
@@ -20,7 +22,9 @@ class CompanyModel(BaseModel):
 
 
 class ResearchCallModel(BaseModel):
-    """Pydantic model representing a research call."""
+    """
+    Pydantic model representing a research call.
+    """
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -42,7 +46,9 @@ class ResearchCallModel(BaseModel):
 
 
 class MatchResultModel(BaseModel):
-    """Pydantic model representing a match result."""
+    """
+    Pydantic model representing a match result.
+    """
 
     name: str
     url: str
@@ -59,14 +65,18 @@ class MatchResultModel(BaseModel):
 
 
 class PartnerModel(BaseModel):
-    """Pydantic model for partners in a proposal."""
+    """
+    Pydantic model for partners in a proposal.
+    """
 
     name: str
     role: str
 
 
 class MissingPartnerSearchModel(BaseModel):
-    """Pydantic model for missing partner searches."""
+    """
+    Pydantic model for missing partner searches.
+    """
 
     type_description: str
     filters: Dict[str, Any]
@@ -76,7 +86,9 @@ class MissingPartnerSearchModel(BaseModel):
 
 
 class ProposalModel(BaseModel):
-    """Pydantic model for a research project proposal."""
+    """
+    Pydantic model for a research project proposal.
+    """
 
     title: str
     description: str

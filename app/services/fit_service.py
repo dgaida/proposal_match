@@ -6,7 +6,8 @@ from app.utils.json_utils import parse_llm_json_list
 
 
 class FITService:
-    """Service for interacting with the FIT Uni Kassel research funding database.
+    """
+    Service for interacting with the FIT Uni Kassel research funding database.
 
     Attributes:
         base_url (str): The base URL for the FIT API.
@@ -18,7 +19,8 @@ class FITService:
     def __init__(
         self, llm_service: LLMService, base_url: str = "https://fit.uni-kassel.de/api"
     ):
-        """Initializes the FITService.
+        """
+        Initializes the FITService.
 
         Args:
             llm_service (LLMService): The LLM service for analysis.
@@ -35,7 +37,8 @@ class FITService:
         password: str,
         status_callback: Optional[Callable[[str], None]] = None,
     ) -> bool:
-        """Authenticates with Keycloak to obtain an access token.
+        """
+        Authenticates with Keycloak to obtain an access token.
 
         Args:
             username (str): The FIT username.
@@ -73,7 +76,8 @@ class FITService:
     def search_calls(
         self, query: str, status_callback: Optional[Callable[[str], None]] = None
     ) -> List[Dict[str, Any]]:
-        """Searches for research calls on FIT and uses LLM for relevance filtering.
+        """
+        Searches for research calls on FIT and uses LLM for relevance filtering.
 
         Args:
             query (str): The search query.
@@ -110,7 +114,8 @@ class FITService:
     def _filter_relevant_calls(
         self, docs: List[Dict[str, Any]], query: str
     ) -> List[Dict[str, Any]]:
-        """Filters a list of documents for relevance to a query using an LLM.
+        """
+        Filters a list of documents for relevance to a query using an LLM.
 
         Args:
             docs (List[Dict[str, Any]]): The list of documents to filter.
@@ -169,7 +174,8 @@ class FITService:
         results: List[Dict[str, Any]],
         status_callback: Optional[Callable[[str], None]] = None,
     ) -> str:
-        """Generates a summary of research funding results using an LLM.
+        """
+        Generates a summary of research funding results using an LLM.
 
         Args:
             results (List[Dict[str, Any]]): The search results to summarize.

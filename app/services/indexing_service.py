@@ -10,7 +10,8 @@ from app.models.models import CompanyModel
 
 
 class IndexingService:
-    """Service for indexing company information from web links and local files.
+    """
+    Service for indexing company information from web links and local files.
 
     Attributes:
         llm_service (LLMService): LLM service for information extraction.
@@ -22,7 +23,8 @@ class IndexingService:
     def __init__(
         self, llm_service: LLMService, db_manager: DBManager, vector_store: VectorStore
     ):
-        """Initializes the IndexingService.
+        """
+        Initializes the IndexingService.
 
         Args:
             llm_service (LLMService): The LLM service for analysis.
@@ -35,7 +37,8 @@ class IndexingService:
         self.scraper_service = ScraperService()
 
     def index_companies_from_links(self, links: List[str]) -> int:
-        """Processes and indexes a list of company website URLs.
+        """
+        Processes and indexes a list of company website URLs.
 
         Args:
             links (List[str]): A list of URLs to index.
@@ -73,7 +76,8 @@ class IndexingService:
         return indexed_count
 
     def _extract_company_info(self, text: str, url: str) -> Optional[CompanyModel]:
-        """Extracts company metadata from text using LLM.
+        """
+        Extracts company metadata from text using LLM.
 
         Args:
             text (str): The scraped text content of the website.
@@ -134,7 +138,8 @@ class IndexingService:
         limit: int = 25,
         status_callback: Optional[Callable[[str], None]] = None,
     ) -> List[str]:
-        """Indexes company URLs found in .url files within a local directory.
+        """
+        Indexes company URLs found in .url files within a local directory.
 
         Args:
             folder_path (str): The directory path to scan.
@@ -184,7 +189,8 @@ class IndexingService:
         return indexed_urls
 
     def _extract_url_from_file(self, file_path: str) -> Optional[str]:
-        """Extracts the target URL from a Windows-style .url file.
+        """
+        Extracts the target URL from a Windows-style .url file.
 
         Args:
             file_path (str): The path to the .url file.

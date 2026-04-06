@@ -5,7 +5,8 @@ from app.models.models import CompanyModel
 
 
 class VectorStore:
-    """Manages semantic vector storage and querying using ChromaDB.
+    """
+    Manages semantic vector storage and querying using ChromaDB.
 
     Attributes:
         client (PersistentClient): The ChromaDB client.
@@ -13,7 +14,8 @@ class VectorStore:
     """
 
     def __init__(self, persist_directory: str = "data/chroma_db"):
-        """Initializes the vector store with a persistence directory.
+        """
+        Initializes the vector store with a persistence directory.
 
         Args:
             persist_directory (str): Path to store the ChromaDB database.
@@ -26,7 +28,8 @@ class VectorStore:
     def add_company_vector(
         self, company_id: str, text: str, metadata: Union[Dict[str, Any], CompanyModel]
     ) -> None:
-        """Upserts a company's vector embedding and metadata.
+        """
+        Upserts a company's vector embedding and metadata.
 
         Args:
             company_id (str): Unique ID (usually URL).
@@ -47,7 +50,8 @@ class VectorStore:
         where: Optional[Dict[str, Any]] = None,
         where_document: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """Queries the vector store for similar companies using semantic search.
+        """
+        Queries the vector store for similar companies using semantic search.
 
         Args:
             query_text (str): The search query text.

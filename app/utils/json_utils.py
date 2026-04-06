@@ -3,7 +3,9 @@ from typing import Dict, Any, Optional
 
 
 def parse_llm_json(response: str) -> Optional[Dict[str, Any]]:
-    """Attempts to parse an LLM response string into a dictionary.
+    """
+    Attempts to parse an LLM response string into a dictionary.
+
     Handles potential extra text before or after the JSON block.
 
     Args:
@@ -40,7 +42,9 @@ def parse_llm_json(response: str) -> Optional[Dict[str, Any]]:
 
 
 def parse_llm_json_list(response: str) -> Optional[list]:
-    """Attempts to parse an LLM response string into a list.
+    """
+    Attempts to parse an LLM response string into a list.
+
     Handles potential extra text or markdown blocks.
 
     Args:

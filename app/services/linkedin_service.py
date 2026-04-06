@@ -5,7 +5,8 @@ from app.services.llm_service import LLMService
 
 
 class LinkedInService:
-    """Service for LinkedIn integration and contact matching.
+    """
+    Service for LinkedIn integration and contact matching.
 
     Attributes:
         llm_service (LLMService): LLM service for analysis and generation.
@@ -18,7 +19,8 @@ class LinkedInService:
         username: Optional[str] = None,
         password: Optional[str] = None,
     ):
-        """Initializes the LinkedInService.
+        """
+        Initializes the LinkedInService.
 
         Args:
             llm_service (LLMService): The LLM service for logic.
@@ -36,7 +38,8 @@ class LinkedInService:
     def get_first_degree_contacts(
         self, limit: int = -1, status_callback: Optional[Callable[[str], None]] = None
     ) -> List[Dict[str, Any]]:
-        """Fetches 1st-degree contacts from the LinkedIn account.
+        """
+        Fetches 1st-degree contacts from the LinkedIn account.
 
         Args:
             limit (int): Maximum number of contacts to fetch. Defaults to -1 (no limit).
@@ -81,7 +84,8 @@ class LinkedInService:
     def generate_outreach_message(
         self, contact_name: str, company_name: str, call_data: Any
     ) -> str:
-        """Generates a professional outreach message via LLM.
+        """
+        Generates a professional outreach message via LLM.
 
         Args:
             contact_name (str): Full name of the contact.
@@ -117,7 +121,8 @@ class LinkedInService:
         call_data: Any,
         status_callback: Optional[Callable[[str], None]] = None,
     ) -> Dict[str, Any]:
-        """Analyzes a list of LinkedIn contacts to find matches for a research call.
+        """
+        Analyzes a list of LinkedIn contacts to find matches for a research call.
 
         Args:
             contacts (List[Dict[str, Any]]): The list of LinkedIn contacts to analyze.
