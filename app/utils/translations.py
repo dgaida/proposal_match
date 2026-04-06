@@ -1,3 +1,4 @@
+from typing import Any
 translations = {
     "de": {
         "page_title": "Förderrecherche App",
