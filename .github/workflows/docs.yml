@@ -58,4 +58,5 @@ jobs:
         run: |
           git add CHANGELOG.md docs/assets/interrogate_badge.svg
           git commit -m "docs: update changelog and quality metrics [skip ci]" || exit 0
+          git pull --rebase origin main
           git push
