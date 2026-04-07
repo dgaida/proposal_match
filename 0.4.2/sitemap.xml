@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/architecture/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/architecture/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/architecture/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/usage/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/usage/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/usage/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/api/analyzer_service/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/api/analyzer_service/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/api/analyzer_service/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/api/db_manager/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/api/db_manager/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/api/db_manager/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/api/fit_service/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/api/fit_service/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/api/fit_service/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/api/indexing_service/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/api/indexing_service/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/api/indexing_service/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/api/linkedin_service/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/api/linkedin_service/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/api/linkedin_service/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/api/llm_service/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/api/llm_service/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/api/llm_service/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/api/matching_service/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/api/matching_service/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/api/matching_service/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/api/scraper_service/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/api/scraper_service/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/api/scraper_service/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/api/vector_store/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/api/vector_store/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/api/vector_store/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/configuration/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/configuration/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/configuration/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/getting-started/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/getting-started/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/getting-started/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/installation/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/installation/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/installation/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/troubleshooting/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/troubleshooting/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/troubleshooting/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/api/models/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/api/models/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/api/models/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/api/services/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/api/services/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/api/services/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/api/utils/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/api/utils/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/api/utils/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/architecture/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/architecture/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/architecture/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/development/changelog/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/development/changelog/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/development/changelog/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/development/metrics/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/development/metrics/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/development/metrics/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/development/style-guide/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/development/style-guide/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/development/style-guide/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/usage/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2/usage/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2en/usage/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/architecture/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/architecture/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2architecture/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/usage/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/usage/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2usage/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/api/analyzer_service/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/api/analyzer_service/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2api/analyzer_service/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/api/db_manager/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/api/db_manager/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2api/db_manager/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/api/fit_service/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/api/fit_service/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2api/fit_service/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/api/indexing_service/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/api/indexing_service/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2api/indexing_service/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/api/linkedin_service/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/api/linkedin_service/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2api/linkedin_service/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/api/llm_service/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/api/llm_service/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2api/llm_service/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/api/matching_service/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/api/matching_service/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2api/matching_service/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/api/scraper_service/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/api/scraper_service/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2api/scraper_service/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/api/vector_store/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/api/vector_store/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2api/vector_store/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/configuration/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/configuration/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2configuration/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/getting-started/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/getting-started/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2getting-started/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/installation/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/installation/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2installation/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/troubleshooting/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/troubleshooting/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2troubleshooting/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/api/models/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/api/models/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2api/models/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/api/services/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/api/services/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2api/services/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/api/utils/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/api/utils/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2api/utils/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/architecture/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/architecture/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2architecture/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/development/changelog/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/development/changelog/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2development/changelog/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/development/metrics/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/development/metrics/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2development/metrics/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/development/style-guide/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/development/style-guide/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2development/style-guide/"/>
+    </url>
+    <url>
+        <loc>https://dgaida.github.io/proposal_match/0.4.2/en/usage/</loc>
+        <lastmod>2026-04-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://dgaida.github.io/proposal_match/0.4.2/en/usage/"/>
+        <xhtml:link rel="alternate" hreflang="de" href="https://dgaida.github.io/proposal_match/0.4.2usage/"/>
+    </url>
+</urlset>
