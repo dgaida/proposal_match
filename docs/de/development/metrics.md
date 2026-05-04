@@ -6,7 +6,7 @@ Diese Seite bietet einen Überblick über die Qualität und den Status der Dokum
 
 Wir streben eine Abdeckung von **95%** für alle öffentlichen APIs an.
 
-![Interrogate Badge](../assets/interrogate_badge.svg)
+![Interrogate Badge](../../assets/interrogate_badge.svg)
 
 - **Status**: Aktiv überwacht durch CI.
 - **Werkzeug**: [interrogate](https://interrogate.readthedocs.io/)
