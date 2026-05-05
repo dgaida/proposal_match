@@ -14,7 +14,7 @@ Service for analyzing research call text and extracting structured metadata.
 
 **Attributes**:
 
-- `llm_service` _LLMService_ - The LLM service used for extraction.
+- `llm_service` _LLMService_ - The LLM service used for extraction.  
 
 <a id="app.services.analyzer_service.AnalyzerService.__init__"></a>
 
@@ -28,7 +28,7 @@ Initializes the AnalyzerService.
 
 **Arguments**:
 
-- `llm_service` _LLMService_ - The LLM service to use.
+- `llm_service` _LLMService_ - The LLM service to use.  
 
 <a id="app.services.analyzer_service.AnalyzerService.analyze_research_call"></a>
 
@@ -46,9 +46,9 @@ Analyzes a research call using LLM to extract key details.
 
 **Arguments**:
 
-- `text` _str_ - The text content of the research call.
-- `url` _Optional[str]_ - The source URL of the call.
-- `status_callback` _Optional[Callable[[str], None]]_ - Callback for status updates.
+- `text` _str_ - The text content of the research call.  
+- `url` _Optional[str]_ - The source URL of the call.  
+- `status_callback` _Optional[Callable[[str], None]]_ - Callback for status updates.  
 
 
 **Returns**:
@@ -58,4 +58,4 @@ Analyzes a research call using LLM to extract key details.
 
 **Raises**:
 
-- `Exception` - Propagates exceptions from the LLM service.
+- `Exception` - Propagates exceptions from the LLM service.  

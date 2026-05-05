@@ -6,10 +6,10 @@ Die Förderrecherche App kann über Umgebungsvariablen und direkt in der Anwendu
 
 Stellen Sie in der Seitenleiste der App den LLM-Anbieter und den entsprechenden API-Schlüssel ein. Die App unterstützt folgende Anbieter:
 
-- **OpenAI**: Erfordert einen `OPENAI_API_KEY`.
-- **Groq**: Erfordert einen `GROQ_API_KEY`.
-- **Gemini**: Erfordert einen `GEMINI_API_KEY`.
-- **Ollama**: Unterstützt lokale Modelle (z.B. `llama3`).
+- **OpenAI**: Erfordert einen `OPENAI_API_KEY`.  
+- **Groq**: Erfordert einen `GROQ_API_KEY`.  
+- **Gemini**: Erfordert einen `GEMINI_API_KEY`.  
+- **Ollama**: Unterstützt lokale Modelle (z.B. `llama3`).  
 
 ### Umgebungsvariablen
 
@@ -24,17 +24,17 @@ GEMINI_API_KEY=your-key
 
 Um die Suche in der FIT-Datenbank und die LinkedIn-Integration zu nutzen, müssen Sie Ihre Anmeldedaten angeben:
 
-- **FIT Uni Kassel**: Benutzername und Passwort.
-- **LinkedIn**: Benutzername und Passwort (derzeit eingeschränkt).
+- **FIT Uni Kassel**: Benutzername und Passwort.  
+- **LinkedIn**: Benutzername und Passwort (derzeit eingeschränkt).  
 
 ## Persistente Datenspeicherung
 
 Die App speichert Daten in folgenden Verzeichnissen:
 
-- **SQLite**: `data/companies.db` (Metadaten der Organisationen).
-- **ChromaDB**: `data/chroma_db/` (Vektoreinbettungen für semantische Suche).
-- **Summaries**: `data/summaries/` (Analysierte Ausschreibungen).
-- **Proposals**: `data/proposals/` (Generierte Projektvorschläge).
+- **SQLite**: `data/companies.db` (Metadaten der Organisationen).  
+- **ChromaDB**: `data/chroma_db/` (Vektoreinbettungen für semantische Suche).  
+- **Summaries**: `data/summaries/` (Analysierte Ausschreibungen).  
+- **Proposals**: `data/proposals/` (Generierte Projektvorschläge).  
 
 ---
 

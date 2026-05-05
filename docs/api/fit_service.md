@@ -14,10 +14,10 @@ Service for interacting with the FIT Uni Kassel research funding database.
 
 **Attributes**:
 
-- `base_url` _str_ - The base URL for the FIT API.
-- `llm_service` _LLMService_ - The LLM service for filtering and summarizing.
-- `auth_url` _str_ - The URL for Keycloak authentication.
-- `client` _httpx.Client_ - The HTTP client for making API requests.
+- `base_url` _str_ - The base URL for the FIT API.  
+- `llm_service` _LLMService_ - The LLM service for filtering and summarizing.  
+- `auth_url` _str_ - The URL for Keycloak authentication.  
+- `client` _httpx.Client_ - The HTTP client for making API requests.  
 
 <a id="app.services.fit_service.FITService.__init__"></a>
 
@@ -32,8 +32,8 @@ Initializes the FITService.
 
 **Arguments**:
 
-- `llm_service` _LLMService_ - The LLM service for analysis.
-- `base_url` _str_ - The API base URL.
+- `llm_service` _LLMService_ - The LLM service for analysis.  
+- `base_url` _str_ - The API base URL.  
 
 <a id="app.services.fit_service.FITService.login"></a>
 
@@ -49,14 +49,14 @@ Authenticates with Keycloak to obtain an access token.
 
 **Arguments**:
 
-- `username` _str_ - The FIT username.
-- `password` _str_ - The FIT password.
-- `status_callback` _Optional[Callable[[str], None]]_ - Callback for status updates.
+- `username` _str_ - The FIT username.  
+- `password` _str_ - The FIT password.  
+- `status_callback` _Optional[Callable[[str], None]]_ - Callback for status updates.  
 
 
 **Returns**:
 
-- `bool` - True if login is successful, False otherwise.
+- `bool` - True if login is successful, False otherwise.  
 
 <a id="app.services.fit_service.FITService.search_calls"></a>
 
@@ -73,8 +73,8 @@ Searches for research calls on FIT and uses LLM for relevance filtering.
 
 **Arguments**:
 
-- `query` _str_ - The search query.
-- `status_callback` _Optional[Callable[[str], None]]_ - Callback for status updates.
+- `query` _str_ - The search query.  
+- `status_callback` _Optional[Callable[[str], None]]_ - Callback for status updates.  
 
 
 **Returns**:
@@ -95,10 +95,10 @@ Generates a summary of research funding results using an LLM.
 
 **Arguments**:
 
-- `results` _List[Dict[str, Any]]_ - The search results to summarize.
-- `status_callback` _Optional[Callable[[str], None]]_ - Callback for status updates.
+- `results` _List[Dict[str, Any]]_ - The search results to summarize.  
+- `status_callback` _Optional[Callable[[str], None]]_ - Callback for status updates.  
 
 
 **Returns**:
 
-- `str` - A formatted summary of the results in German.
+- `str` - A formatted summary of the results in German.  

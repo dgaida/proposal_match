@@ -14,7 +14,7 @@ Service for scraping and cleaning web content.
 
 **Attributes**:
 
-- `timeout` _int_ - The HTTP request timeout in seconds.
+- `timeout` _int_ - The HTTP request timeout in seconds.  
 
 <a id="app.services.scraper_service.ScraperService.__init__"></a>
 
@@ -28,7 +28,7 @@ Initializes the ScraperService with a timeout.
 
 **Arguments**:
 
-- `timeout` _int_ - The HTTP request timeout in seconds.
+- `timeout` _int_ - The HTTP request timeout in seconds.  
 
 <a id="app.services.scraper_service.ScraperService.fetch_page_content"></a>
 
@@ -42,9 +42,9 @@ Fetches the text content of a given URL and follows redirects.
 
 **Arguments**:
 
-- `url` _str_ - The URL to fetch content from.
+- `url` _str_ - The URL to fetch content from.  
 
 
 **Returns**:
 
-- `Optional[dict]` - A dictionary containing 'text' and 'final_url', or None on failure.
+- `Optional[dict]` - A dictionary containing 'text' and 'final_url', or None on failure.  

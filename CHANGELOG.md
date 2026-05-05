@@ -4,262 +4,262 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Fixes
 
-- *(ci)* Handle race condition in docs push
+- *(ci)* Handle race condition in docs push  
 
 ## [0.4.2] - 2026-04-06
 
 ### Bug Fixes
 
-- *(ci)* Import Any in translations utility
+- *(ci)* Import Any in translations utility  
 
 ### Documentation
 
-- Implement professional bilingual documentation ecosystem
+- Implement professional bilingual documentation ecosystem  
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ### Styling
 
-- Format translations utility with ruff
+- Format translations utility with ruff  
 
 ## [0.4.1] - 2026-03-30
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.4.0] - 2026-03-28
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ### Ci
 
-- Fix docs workflow permissions and update environment
-- Fix docs workflow permissions and resolve linting error
+- Fix docs workflow permissions and update environment  
+- Fix docs workflow permissions and resolve linting error  
 
 ## [0.3.9] - 2026-03-28
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.3.8] - 2026-03-28
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.3.7] - 2026-03-28
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.3.6] - 2026-03-28
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.3.5] - 2026-03-28
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.3.4] - 2026-03-28
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.3.3] - 2026-03-28
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.3.2] - 2026-03-28
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.3.1] - 2026-03-28
 
 ### Miscellaneous Tasks
 
-- Add badges to README.md [skip ci]
-- Increment version [skip ci]
+- Add badges to README.md [skip ci]  
+- Increment version [skip ci]  
 
 ## [0.3.0] - 2026-03-28
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.2.9] - 2026-03-28
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.2.8] - 2026-03-27
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.2.7] - 2026-03-27
 
 ### Bug Fixes
 
-- Indexing TypeError and enhance matching with pre-filtering and caching
+- Indexing TypeError and enhance matching with pre-filtering and caching  
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.2.6] - 2026-03-27
 
 ### Bug Fixes
 
-- Ensure list items are strings before joining in IndexingService
+- Ensure list items are strings before joining in IndexingService  
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.2.5] - 2026-03-27
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.2.4] - 2026-03-27
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.2.3] - 2026-03-27
 
 ### Features
 
-- Add configurable limits and repository maintenance
-- Add configurable limits and perform repository maintenance
-- Add configurable limits and perform repository maintenance
+- Add configurable limits and repository maintenance  
+- Add configurable limits and perform repository maintenance  
+- Add configurable limits and perform repository maintenance  
 
 ### Miscellaneous Tasks
 
-- Add badges to README.md [skip ci]
-- Increment version [skip ci]
+- Add badges to README.md [skip ci]  
+- Increment version [skip ci]  
 
 ## [0.2.2] - 2026-03-27
 
 ### Features
 
-- Add configurable limits for LinkedIn contacts and folder indexing
+- Add configurable limits for LinkedIn contacts and folder indexing  
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.2.1] - 2026-03-26
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.2.0] - 2026-03-26
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.1.9] - 2026-03-26
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.1.8] - 2026-03-26
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.1.7] - 2026-03-26
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.1.6] - 2026-03-26
 
 ### Bug Fixes
 
-- Add missing json import in app/main.py
+- Add missing json import in app/main.py  
 
 ### Features
 
-- Enhance research assistant with persistence, process visibility, and personalized suggestions
+- Enhance research assistant with persistence, process visibility, and personalized suggestions  
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.1.5] - 2026-03-26
 
 ### Bug Fixes
 
-- Resolve editable install error and broken imports
-- Resolve editable install error and package discovery
-- Resolve editable install error and use ddgs package
+- Resolve editable install error and broken imports  
+- Resolve editable install error and package discovery  
+- Resolve editable install error and use ddgs package  
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.1.4] - 2026-03-26
 
 ### Features
 
-- Add LLM fallback, database browser, and improved company search
-- Add LLM fallback, database browser, and improved search relevance
-- Add LLM fallback, database browser, and improved search relevance
+- Add LLM fallback, database browser, and improved company search  
+- Add LLM fallback, database browser, and improved search relevance  
+- Add LLM fallback, database browser, and improved search relevance  
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.1.3] - 2026-03-26
 
 ### Miscellaneous Tasks
 
-- Increment version [skip ci]
+- Increment version [skip ci]  
 
 ## [0.1.2] - 2026-03-26
 
 ### Miscellaneous Tasks
 
-- Add badges to README.md [skip ci]
-- Increment version [skip ci]
+- Add badges to README.md [skip ci]  
+- Increment version [skip ci]  
 
 ## [0.1.1] - 2026-03-25
 
 ### Features
 
-- Implement funding research app with LLM, FIT, and LinkedIn integration
-- Complete research funding app with CI/CD and docs
+- Implement funding research app with LLM, FIT, and LinkedIn integration  
+- Complete research funding app with CI/CD and docs  
 
 ### Miscellaneous Tasks
 
-- Add badges to README.md [skip ci]
-- Increment version [skip ci]
+- Add badges to README.md [skip ci]  
+- Increment version [skip ci]  
 
 <!-- generated by git-cliff -->

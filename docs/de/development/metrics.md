@@ -8,8 +8,8 @@ Wir streben eine Abdeckung von **95%** für alle öffentlichen APIs an.
 
 ![Interrogate Badge](../../assets/interrogate_badge.svg)
 
-- **Status**: Aktiv überwacht durch CI.
-- **Werkzeug**: [interrogate](https://interrogate.readthedocs.io/)
+- **Status**: Aktiv überwacht durch CI.  
+- **Werkzeug**: [interrogate](https://interrogate.readthedocs.io/)  
 
 ## Build-Status
 
@@ -23,4 +23,4 @@ Wir streben eine Abdeckung von **95%** für alle öffentlichen APIs an.
 
 Der Changelog wird automatisch bei jedem Release basierend auf [Conventional Commits](https://www.conventionalcommits.org/) generiert.
 
-- **Werkzeug**: [git-cliff](https://git-cliff.org/)
+- **Werkzeug**: [git-cliff](https://git-cliff.org/)  

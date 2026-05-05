@@ -53,17 +53,17 @@ sequenceDiagram
 
 ## Kernkomponenten
 
-### Dienste (`app/services/`)
-- **AnalyzerService**: Extraktion strukturierter Daten aus Ausschreibungen.
-- **FITService**: Schnittstelle zur Forschungsdatenbank der Uni Kassel.
-- **IndexingService**: Crawling und Indexierung von Webseiten.
-- **LinkedInService**: Kontaktmanagement und Outreach.
-- **LLMService**: Abstraktionsschicht für verschiedene LLM-Anbieter.
-- **MatchingService**: Durchführung der Hybrid-Suche.
-- **ScraperService**: Abrufen und Bereinigen von Webinhalten.
+### Dienste (`app/services/`)  
+- **AnalyzerService**: Extraktion strukturierter Daten aus Ausschreibungen.  
+- **FITService**: Schnittstelle zur Forschungsdatenbank der Uni Kassel.  
+- **IndexingService**: Crawling und Indexierung von Webseiten.  
+- **LinkedInService**: Kontaktmanagement und Outreach.  
+- **LLMService**: Abstraktionsschicht für verschiedene LLM-Anbieter.  
+- **MatchingService**: Durchführung der Hybrid-Suche.  
+- **ScraperService**: Abrufen und Bereinigen von Webinhalten.  
 
-### Hilfsprogramme (`app/utils/`)
-- **DBManager**: Verwaltung der SQLite-Datenbank.
-- **VectorStore**: Verwaltung der ChromaDB-Vektordatenbank.
-- **Translations**: Unterstützung für Mehrsprachigkeit.
-- **GeoUtils**: Geokodierung von Firmenstandorten.
+### Hilfsprogramme (`app/utils/`)  
+- **DBManager**: Verwaltung der SQLite-Datenbank.  
+- **VectorStore**: Verwaltung der ChromaDB-Vektordatenbank.  
+- **Translations**: Unterstützung für Mehrsprachigkeit.  
+- **GeoUtils**: Geokodierung von Firmenstandorten.  

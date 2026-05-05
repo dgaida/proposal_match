@@ -14,10 +14,10 @@ Service for indexing company information from web links and local files.
 
 **Attributes**:
 
-- `llm_service` _LLMService_ - LLM service for information extraction.
-- `db_manager` _DBManager_ - Manager for SQLite database storage.
-- `vector_store` _VectorStore_ - Manager for ChromaDB vector storage.
-- `scraper_service` _ScraperService_ - Service for web content scraping.
+- `llm_service` _LLMService_ - LLM service for information extraction.  
+- `db_manager` _DBManager_ - Manager for SQLite database storage.  
+- `vector_store` _VectorStore_ - Manager for ChromaDB vector storage.  
+- `scraper_service` _ScraperService_ - Service for web content scraping.  
 
 <a id="app.services.indexing_service.IndexingService.__init__"></a>
 
@@ -32,9 +32,9 @@ Initializes the IndexingService.
 
 **Arguments**:
 
-- `llm_service` _LLMService_ - The LLM service for analysis.
-- `db_manager` _DBManager_ - The database manager.
-- `vector_store` _VectorStore_ - The vector store manager.
+- `llm_service` _LLMService_ - The LLM service for analysis.  
+- `db_manager` _DBManager_ - The database manager.  
+- `vector_store` _VectorStore_ - The vector store manager.  
 
 <a id="app.services.indexing_service.IndexingService.index_companies_from_links"></a>
 
@@ -48,12 +48,12 @@ Processes and indexes a list of company website URLs.
 
 **Arguments**:
 
-- `links` _List[str]_ - A list of URLs to index.
+- `links` _List[str]_ - A list of URLs to index.  
 
 
 **Returns**:
 
-- `int` - The total count of newly indexed companies.
+- `int` - The total count of newly indexed companies.  
 
 <a id="app.services.indexing_service.IndexingService.index_from_folder"></a>
 
@@ -70,11 +70,11 @@ Indexes company URLs found in .url files within a local directory.
 
 **Arguments**:
 
-- `folder_path` _str_ - The directory path to scan.
-- `limit` _int_ - Maximum number of new companies to index.
-- `status_callback` _Optional[Callable[[str], None]]_ - Callback for status updates.
+- `folder_path` _str_ - The directory path to scan.  
+- `limit` _int_ - Maximum number of new companies to index.  
+- `status_callback` _Optional[Callable[[str], None]]_ - Callback for status updates.  
 
 
 **Returns**:
 
-- `List[str]` - A list of URLs that were successfully indexed.
+- `List[str]` - A list of URLs that were successfully indexed.  

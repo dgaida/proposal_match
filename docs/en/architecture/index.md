@@ -53,17 +53,17 @@ sequenceDiagram
 
 ## Core Components
 
-### Services (`app/services/`)
-- **AnalyzerService**: Extraction of structured data from research calls.
-- **FITService**: Interface to the University of Kassel research database.
-- **IndexingService**: Crawling and indexing of websites.
-- **LinkedInService**: Contact management and outreach.
-- **LLMService**: Abstraction layer for various LLM providers.
-- **MatchingService**: Performing hybrid searches.
-- **ScraperService**: Fetching and cleaning web content.
+### Services (`app/services/`)  
+- **AnalyzerService**: Extraction of structured data from research calls.  
+- **FITService**: Interface to the University of Kassel research database.  
+- **IndexingService**: Crawling and indexing of websites.  
+- **LinkedInService**: Contact management and outreach.  
+- **LLMService**: Abstraction layer for various LLM providers.  
+- **MatchingService**: Performing hybrid searches.  
+- **ScraperService**: Fetching and cleaning web content.  
 
-### Utilities (`app/utils/`)
-- **DBManager**: Management of the SQLite database.
-- **VectorStore**: Management of the ChromaDB vector database.
-- **Translations**: Support for multi-language support.
-- **GeoUtils**: Geocoding of company locations.
+### Utilities (`app/utils/`)  
+- **DBManager**: Management of the SQLite database.  
+- **VectorStore**: Management of the ChromaDB vector database.  
+- **Translations**: Support for multi-language support.  
+- **GeoUtils**: Geocoding of company locations.  

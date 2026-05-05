@@ -14,9 +14,9 @@ Service for matching research calls with organizations in the database.
 
 **Attributes**:
 
-- `llm_service` _LLMService_ - LLM service for analysis and generation.
-- `db_manager` _DBManager_ - Manager for SQLite database interactions.
-- `vector_store` _VectorStore_ - Manager for ChromaDB vector store.
+- `llm_service` _LLMService_ - LLM service for analysis and generation.  
+- `db_manager` _DBManager_ - Manager for SQLite database interactions.  
+- `vector_store` _VectorStore_ - Manager for ChromaDB vector store.  
 
 <a id="app.services.matching_service.MatchingService.__init__"></a>
 
@@ -31,9 +31,9 @@ Initializes the MatchingService.
 
 **Arguments**:
 
-- `llm_service` _LLMService_ - The LLM service for logic.
-- `db_manager` _DBManager_ - The database manager.
-- `vector_store` _VectorStore_ - The vector store manager.
+- `llm_service` _LLMService_ - The LLM service for logic.  
+- `db_manager` _DBManager_ - The database manager.  
+- `vector_store` _VectorStore_ - The vector store manager.  
 
 <a id="app.services.matching_service.MatchingService.suggest_research_topics"></a>
 
@@ -50,14 +50,14 @@ Suggests 5 project ideas for a research call and potential partners.
 
 **Arguments**:
 
-- `call_data` _Dict[str, Any]_ - Data about the research call.
-- `user_context` _str_ - The background of the user.
-- `matched_companies` _List[Dict[str, Any]]_ - A list of companies that match the call.
+- `call_data` _Dict[str, Any]_ - Data about the research call.  
+- `user_context` _str_ - The background of the user.  
+- `matched_companies` _List[Dict[str, Any]]_ - A list of companies that match the call.  
 
 
 **Returns**:
 
-- `List[str]` - A list of suggested research topics and roles.
+- `List[str]` - A list of suggested research topics and roles.  
 
 <a id="app.services.matching_service.MatchingService.generate_multiple_matching_queries"></a>
 
@@ -72,13 +72,13 @@ Generates multiple diverse semantic search queries in German.
 
 **Arguments**:
 
-- `context_data` _Any_ - Data about the research call or a manual query string.
-- `n` _int_ - Number of queries to generate.
+- `context_data` _Any_ - Data about the research call or a manual query string.  
+- `n` _int_ - Number of queries to generate.  
 
 
 **Returns**:
 
-- `List[str]` - A list of query strings for vector search.
+- `List[str]` - A list of query strings for vector search.  
 
 <a id="app.services.matching_service.MatchingService.rephrase_query"></a>
 
@@ -92,12 +92,12 @@ Rephrases a manual query to be optimal for semantic search in German.
 
 **Arguments**:
 
-- `query` _str_ - The user's original search term.
+- `query` _str_ - The user's original search term.  
 
 
 **Returns**:
 
-- `str` - The rephrased and expanded query.
+- `str` - The rephrased and expanded query.  
 
 <a id="app.services.matching_service.MatchingService.hybrid_search"></a>
 
@@ -114,10 +114,10 @@ Finds matching organizations using a hybrid vector-metadata search.
 
 **Arguments**:
 
-- `query` _str_ - The semantic search query.
-- `filters` _Optional[Dict[str, Any]]_ - Filters for country, state, org type, etc.
-- `keywords` _Optional[str]_ - Keywords for document-level filtering.
-- `limit` _int_ - Maximum number of results to return.
+- `query` _str_ - The semantic search query.  
+- `filters` _Optional[Dict[str, Any]]_ - Filters for country, state, org type, etc.  
+- `keywords` _Optional[str]_ - Keywords for document-level filtering.  
+- `limit` _int_ - Maximum number of results to return.  
 
 
 **Returns**:
@@ -141,10 +141,10 @@ Generates 5 detailed project proposals with missing partner discovery.
 
 **Arguments**:
 
-- `call_data` _Dict[str, Any]_ - Data about the research call.
-- `user_context` _str_ - The background of the user.
-- `matched_companies` _List[Dict[str, Any]]_ - A list of companies that already match the call.
-- `status_callback` _Optional[Callable[[str], None]]_ - Callback for status updates.
+- `call_data` _Dict[str, Any]_ - Data about the research call.  
+- `user_context` _str_ - The background of the user.  
+- `matched_companies` _List[Dict[str, Any]]_ - A list of companies that already match the call.  
+- `status_callback` _Optional[Callable[[str], None]]_ - Callback for status updates.  
 
 
 **Returns**:
@@ -165,8 +165,8 @@ Generates a German justification for each matched organization.
 
 **Arguments**:
 
-- `call_data` _Dict[str, Any]_ - Data about the research call.
-- `matched_companies` _List[Dict[str, Any]]_ - The list of matched organizations.
+- `call_data` _Dict[str, Any]_ - Data about the research call.  
+- `matched_companies` _List[Dict[str, Any]]_ - The list of matched organizations.  
 
 
 **Returns**:
@@ -185,7 +185,7 @@ Searches the web for new companies matching a research topic.
 
 **Arguments**:
 
-- `topic` _str_ - The target topic or sector for discovery.
+- `topic` _str_ - The target topic or sector for discovery.  
 
 
 **Returns**:

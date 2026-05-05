@@ -4,18 +4,18 @@ Welcome to the **Funding Research App**, a comprehensive tool to analyze researc
 
 ## Project Goals
 
-- **Automation**: Rapid analysis of complex research calls.
-- **Discovery**: Find relevant funding calls in databases like FIT Uni Kassel.
-- **Networking**: Intelligent matching of companies to research opportunities.
-- **Efficiency**: Automated generation of project proposals and partner lists.
+- **Automation**: Rapid analysis of complex research calls.  
+- **Discovery**: Find relevant funding calls in databases like FIT Uni Kassel.  
+- **Networking**: Intelligent matching of companies to research opportunities.  
+- **Efficiency**: Automated generation of project proposals and partner lists.  
 
 ## Core Features
 
-- 🔍 **Call Summarization**: Extraction of metadata and creation of structured summaries.
-- 🎓 **FIT Search**: Direct access to the University of Kassel research database.
-- 🏢 **Company Indexing**: Building a local knowledge base of potential partners.
-- 🧩 **Hybrid Matching**: Combined SQL and vector search for precise partner recommendations.
-- 📈 **Project Proposals**: AI-generated collaboration ideas and role distributions.
+- 🔍 **Call Summarization**: Extraction of metadata and creation of structured summaries.  
+- 🎓 **FIT Search**: Direct access to the University of Kassel research database.  
+- 🏢 **Company Indexing**: Building a local knowledge base of potential partners.  
+- 🧩 **Hybrid Matching**: Combined SQL and vector search for precise partner recommendations.  
+- 📈 **Project Proposals**: AI-generated collaboration ideas and role distributions.  
 
 ## Languages
 
