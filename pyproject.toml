@@ -1,6 +1,6 @@
 [project]
 name = "funding-research-app"
-version = "0.4.3"
+version = "0.4.4"
 description = "A research funding analysis and collaboration matching tool."
 authors = [
     {name = "User", email = "user@example.com"},
