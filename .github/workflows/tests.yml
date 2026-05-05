@@ -16,4 +16,9 @@ jobs:
           pip install pytest pytest-asyncio pytest-cov
       - name: Run unit tests
         run: |
-          PYTHONPATH=. pytest --cov=app tests/
+          PYTHONPATH=. pytest --cov=app --cov-report=xml --cov-report=term tests/
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml

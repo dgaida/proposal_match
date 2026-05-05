@@ -6,7 +6,7 @@ This page provides an overview of the quality and status of the documentation an
 
 We aim for **95%** coverage for all public APIs.
 
-![Interrogate Badge](../assets/interrogate_badge.svg)
+![Interrogate Badge](../../assets/interrogate_badge.svg)
 
 - **Status**: Actively monitored by CI.
 - **Tool**: [interrogate](https://interrogate.readthedocs.io/)

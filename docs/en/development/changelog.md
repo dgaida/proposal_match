@@ -2,4 +2,4 @@
 
 This document is automatically generated.
 
-{{ snippet('CHANGELOG.md') }}
+{{ snippet('../../../CHANGELOG.md') }}
