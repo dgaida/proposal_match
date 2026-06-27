@@ -121,11 +121,6 @@ class IndexingService:
                     "summary": data.get("Zusammenfassung"),
                     "products": data.get("Produkte"),
                 }
-                # Handle list to string conversion if needed (LLM sometimes returns lists)
-                for key in ["summary", "products"]:
-                    if isinstance(mapped_data[key], list):
-                        mapped_data[key] = "\n".join(str(s) for s in mapped_data[key])
-
                 return CompanyModel.model_validate(mapped_data)
             return None
         except Exception as e:
