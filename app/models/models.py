@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field, ConfigDict
+import json
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import List, Optional, Dict, Any
 
 
@@ -6,6 +7,20 @@ class CompanyModel(BaseModel):
     """
     Pydantic model representing a company/organization.
     """
+
+    @field_validator("summary", "products", mode="before")
+    @classmethod
+    def ensure_string(cls, v: Any) -> Optional[str]:
+        """
+        Ensures that fields that should be strings are converted from list or dict if necessary.
+        """
+        if v is None:
+            return None
+        if isinstance(v, list):
+            return "\n".join(str(item) for item in v)
+        if isinstance(v, dict):
+            return json.dumps(v, ensure_ascii=False)
+        return str(v)
 
     name: Optional[str] = None
     url: str
@@ -25,6 +40,20 @@ class ResearchCallModel(BaseModel):
     """
     Pydantic model representing a research call.
     """
+
+    @field_validator("antragsberechtigt", "andere_metadaten", mode="before")
+    @classmethod
+    def ensure_string(cls, v: Any) -> Optional[str]:
+        """
+        Ensures that fields that should be strings are converted from list or dict if necessary.
+        """
+        if v is None:
+            return None
+        if isinstance(v, list):
+            return "\n".join(str(item) for item in v)
+        if isinstance(v, dict):
+            return json.dumps(v, ensure_ascii=False)
+        return str(v)
 
     model_config = ConfigDict(populate_by_name=True)
 
