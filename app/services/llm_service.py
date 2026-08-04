@@ -124,14 +124,14 @@ class LLMService:
                     )
 
                 return self.chat_completion(messages)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 last_exception = e
                 print(f"Provider {p} failed: {e}")
                 continue
 
         if last_exception:
             raise last_exception
-        raise Exception("No LLM providers available.")
+        raise RuntimeError("No LLM providers available.")
 
     def extract_structured_data(
         self,

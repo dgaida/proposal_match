@@ -75,7 +75,7 @@ def get_llm_service() -> LLMService | None:
     """Initializes the LLM service based on sidebar configuration."""
     try:
         providers = LLMClient.get_supported_providers()
-    except Exception:
+    except Exception:  # noqa: BLE001
         providers = ["openai", "groq", "gemini", "ollama", "kiconnect"]
     env_provider = os.getenv("LLM_PROVIDER", "openai").lower()
     default_index = providers.index(env_provider) if env_provider in providers else 0
@@ -174,7 +174,7 @@ if "fit_results" not in st.session_state:
         try:
             with open(fit_cache_path, "r", encoding="utf-8") as f:
                 st.session_state.fit_results = json.load(f)
-        except Exception:
+        except Exception:  # noqa: BLE001
             st.session_state.fit_results = None
     else:
         st.session_state.fit_results = None
@@ -223,7 +223,7 @@ def parse_md_to_result(content: str) -> dict[str, Any]:
         desc_start = content.find("\n", desc_start) + 1
         desc_end = content.find("### Metadaten")
         result["Beschreibung"] = content[desc_start:desc_end].strip()
-    except Exception:
+    except Exception:  # noqa: BLE001
         result["Beschreibung"] = "No description found."
     return result
 
