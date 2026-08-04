@@ -2,9 +2,25 @@
 All notable changes to this project will be documented in this file.
 ## [unreleased]
 
+### Documentation
+
+- Update changelog and quality metrics [skip ci]
+
+### Features
+
+- Add supported llm providers and increase code coverage to >80%
+- Update llm providers and add 100% compliant high coverage unit tests
+- Finalize supported llm providers update and boost test coverage with clean ruff linting
+
+## [0.4.6] - 2026-06-27
+
 ### Bug Fixes
 
 - Robust pydantic validation for LLM outputs  
+
+### Miscellaneous Tasks
+
+- Auto version and badges [skip ci]
 
 ## [0.4.5] - 2026-05-05
 
