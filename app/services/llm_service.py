@@ -35,7 +35,7 @@ class LLMService:
 
         # Available providers and their keys from environment
         self.available_providers = {}
-        for p in ["openai", "groq", "gemini"]:
+        for p in ["openai", "groq", "gemini", "kiconnect"]:
             key = os.getenv(f"{p.upper()}_API_KEY")
             if key:
                 self.available_providers[p] = key
@@ -65,6 +65,8 @@ class LLMService:
             os.environ["GROQ_API_KEY"] = api_key
         elif provider == "gemini":
             os.environ["GEMINI_API_KEY"] = api_key
+        elif provider == "kiconnect":
+            os.environ["KICONNECT_API_KEY"] = api_key
 
     def chat_completion(self, messages: List[Dict[str, str]]) -> str:
         """

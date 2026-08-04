@@ -5,6 +5,7 @@ import threading
 from typing import Optional, Dict, Any
 from dotenv import load_dotenv
 
+from llm_client import LLMClient
 from app.services.llm_service import LLMService
 from app.utils.db_manager import DBManager
 from app.utils.vector_store import VectorStore
@@ -71,7 +72,10 @@ if "user_context" not in st.session_state:
 # LLM Service Initialization
 def get_llm_service() -> Optional[LLMService]:
     """Initializes the LLM service based on sidebar configuration."""
-    providers = ["openai", "groq", "gemini", "ollama"]
+    try:
+        providers = LLMClient.get_supported_providers()
+    except Exception:
+        providers = ["openai", "groq", "gemini", "ollama", "kiconnect"]
     env_provider = os.getenv("LLM_PROVIDER", "openai").lower()
     default_index = providers.index(env_provider) if env_provider in providers else 0
 
