@@ -1,6 +1,9 @@
 import json
-from typing import List, Dict, Any, Optional, Callable
+from collections.abc import Callable
+from typing import Any
+
 from linkedin_api import Linkedin
+
 from app.services.llm_service import LLMService
 
 
@@ -16,8 +19,8 @@ class LinkedInService:
     def __init__(
         self,
         llm_service: LLMService,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
+        username: str | None = None,
+        password: str | None = None,
     ):
         """
         Initializes the LinkedInService.
@@ -36,8 +39,8 @@ class LinkedInService:
                 print(f"Failed to initialize LinkedIn API: {e}")
 
     def get_first_degree_contacts(
-        self, limit: int = -1, status_callback: Optional[Callable[[str], None]] = None
-    ) -> List[Dict[str, Any]]:
+        self, limit: int = -1, status_callback: Callable[[str], None] | None = None
+    ) -> list[dict[str, Any]]:
         """
         Fetches 1st-degree contacts from the LinkedIn account.
 
@@ -117,10 +120,10 @@ class LinkedInService:
 
     def find_matching_contacts_for_call(
         self,
-        contacts: List[Dict[str, Any]],
+        contacts: list[dict[str, Any]],
         call_data: Any,
-        status_callback: Optional[Callable[[str], None]] = None,
-    ) -> Dict[str, Any]:
+        status_callback: Callable[[str], None] | None = None,
+    ) -> dict[str, Any]:
         """
         Analyzes a list of LinkedIn contacts to find matches for a research call.
 

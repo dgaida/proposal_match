@@ -1,12 +1,13 @@
 import os
 import re
-from typing import List, Optional, Callable
-from app.services.scraper_service import ScraperService
-from app.services.llm_service import LLMService
-from app.utils.db_manager import DBManager
-from app.utils.vector_store import VectorStore
-from app.utils.json_utils import parse_llm_json
+from collections.abc import Callable
+
 from app.models.models import CompanyModel
+from app.services.llm_service import LLMService
+from app.services.scraper_service import ScraperService
+from app.utils.db_manager import DBManager
+from app.utils.json_utils import parse_llm_json
+from app.utils.vector_store import VectorStore
 
 
 class IndexingService:
@@ -36,7 +37,7 @@ class IndexingService:
         self.vector_store = vector_store
         self.scraper_service = ScraperService()
 
-    def index_companies_from_links(self, links: List[str]) -> int:
+    def index_companies_from_links(self, links: list[str]) -> int:
         """
         Processes and indexes a list of company website URLs.
 
@@ -75,7 +76,7 @@ class IndexingService:
                     indexed_count += 1
         return indexed_count
 
-    def _extract_company_info(self, text: str, url: str) -> Optional[CompanyModel]:
+    def _extract_company_info(self, text: str, url: str) -> CompanyModel | None:
         """
         Extracts company metadata from text using LLM.
 
@@ -131,8 +132,8 @@ class IndexingService:
         self,
         folder_path: str,
         limit: int = 25,
-        status_callback: Optional[Callable[[str], None]] = None,
-    ) -> List[str]:
+        status_callback: Callable[[str], None] | None = None,
+    ) -> list[str]:
         """
         Indexes company URLs found in .url files within a local directory.
 
@@ -183,7 +184,7 @@ class IndexingService:
                     return indexed_urls
         return indexed_urls
 
-    def _extract_url_from_file(self, file_path: str) -> Optional[str]:
+    def _extract_url_from_file(self, file_path: str) -> str | None:
         """
         Extracts the target URL from a Windows-style .url file.
 

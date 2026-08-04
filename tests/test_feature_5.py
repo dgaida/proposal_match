@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock
+
 from app.services.linkedin_service import LinkedInService
 from app.services.llm_service import LLMService
 

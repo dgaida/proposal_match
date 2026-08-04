@@ -1,9 +1,13 @@
-import os
 import json
-import pytest
-from unittest.mock import MagicMock, patch, mock_open
-from typing import Dict, Any, List
+import os
+from unittest.mock import MagicMock, patch
 
+import pytest
+
+from app.models.models import (
+    MatchResultModel,
+    ResearchCallModel,
+)
 from app.services.analyzer_service import AnalyzerService
 from app.services.fit_service import FITService
 from app.services.indexing_service import IndexingService
@@ -11,10 +15,7 @@ from app.services.linkedin_service import LinkedInService
 from app.services.llm_service import LLMService
 from app.services.matching_service import MatchingService
 from app.services.scraper_service import ScraperService
-
-from app.models.models import ResearchCallModel, CompanyModel, MatchResultModel, ProposalModel
-from app.utils.db_manager import DBManager, Company
-from app.utils.vector_store import VectorStore
+from app.utils.db_manager import Company
 
 
 # ==========================================
@@ -313,7 +314,7 @@ def test_indexing_service_from_folder(tmp_path):
 def test_indexing_service_extract_url_exception():
     indexer = IndexingService(MagicMock(), MagicMock(), MagicMock())
     # trigger open exception by mocking open to raise an error
-    with patch("builtins.open", side_effect=IOError("Permission denied")):
+    with patch("builtins.open", side_effect=OSError("Permission denied")):
         assert indexer._extract_url_from_file("some_file.url") is None
 
 

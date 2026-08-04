@@ -1,5 +1,6 @@
-from app.utils.geo_utils import get_coordinates
 import os
+
+from app.utils.geo_utils import get_coordinates
 
 # Ensure we start fresh for the diagnostic
 if os.path.exists("data/geo_cache.json"):

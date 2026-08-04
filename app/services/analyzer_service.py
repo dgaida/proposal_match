@@ -1,7 +1,8 @@
-from typing import Optional, Callable
+from collections.abc import Callable
+
+from app.models.models import ResearchCallModel
 from app.services.llm_service import LLMService
 from app.utils.json_utils import parse_llm_json
-from app.models.models import ResearchCallModel
 
 
 class AnalyzerService:
@@ -24,9 +25,9 @@ class AnalyzerService:
     def analyze_research_call(
         self,
         text: str,
-        url: Optional[str] = None,
-        status_callback: Optional[Callable[[str], None]] = None,
-    ) -> Optional[ResearchCallModel]:
+        url: str | None = None,
+        status_callback: Callable[[str], None] | None = None,
+    ) -> ResearchCallModel | None:
         """
         Analyzes a research call using LLM to extract key details.
 
@@ -76,6 +77,6 @@ class AnalyzerService:
                     return None
 
             return None
-        except Exception as e:
+        except Exception:
             # Re-raise to let the caller handle the specific exception (useful for UI error messages)
-            raise e
+            raise

@@ -1,6 +1,9 @@
-import httpx
 import json
-from typing import List, Dict, Any, Optional, Callable
+from collections.abc import Callable
+from typing import Any
+
+import httpx
+
 from app.services.llm_service import LLMService
 from app.utils.json_utils import parse_llm_json_list
 
@@ -35,7 +38,7 @@ class FITService:
         self,
         username: str,
         password: str,
-        status_callback: Optional[Callable[[str], None]] = None,
+        status_callback: Callable[[str], None] | None = None,
     ) -> bool:
         """
         Authenticates with Keycloak to obtain an access token.
@@ -74,8 +77,8 @@ class FITService:
             return False
 
     def search_calls(
-        self, query: str, status_callback: Optional[Callable[[str], None]] = None
-    ) -> List[Dict[str, Any]]:
+        self, query: str, status_callback: Callable[[str], None] | None = None
+    ) -> list[dict[str, Any]]:
         """
         Searches for research calls on FIT and uses LLM for relevance filtering.
 
@@ -112,8 +115,8 @@ class FITService:
             return []
 
     def _filter_relevant_calls(
-        self, docs: List[Dict[str, Any]], query: str
-    ) -> List[Dict[str, Any]]:
+        self, docs: list[dict[str, Any]], query: str
+    ) -> list[dict[str, Any]]:
         """
         Filters a list of documents for relevance to a query using an LLM.
 
@@ -171,8 +174,8 @@ class FITService:
 
     def summarize_results(
         self,
-        results: List[Dict[str, Any]],
-        status_callback: Optional[Callable[[str], None]] = None,
+        results: list[dict[str, Any]],
+        status_callback: Callable[[str], None] | None = None,
     ) -> str:
         """
         Generates a summary of research funding results using an LLM.

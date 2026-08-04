@@ -1,8 +1,9 @@
 from unittest.mock import MagicMock, patch
+
+from app.services.llm_service import LLMService
 from app.services.matching_service import MatchingService
 from app.utils.db_manager import Company
 from app.utils.vector_store import VectorStore
-from app.services.llm_service import LLMService
 
 
 def test_matching_service_hybrid_search():

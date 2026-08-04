@@ -1,6 +1,8 @@
 import os
+from typing import Any
+
 import chromadb
-from typing import Dict, Any, Optional, Union
+
 from app.models.models import CompanyModel
 
 
@@ -26,7 +28,7 @@ class VectorStore:
         self.collection = self.client.get_or_create_collection(name="companies")
 
     def add_company_vector(
-        self, company_id: str, text: str, metadata: Union[Dict[str, Any], CompanyModel]
+        self, company_id: str, text: str, metadata: dict[str, Any] | CompanyModel
     ) -> None:
         """
         Upserts a company's vector embedding and metadata.
@@ -47,9 +49,9 @@ class VectorStore:
         self,
         query_text: str,
         n_results: int = 5,
-        where: Optional[Dict[str, Any]] = None,
-        where_document: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        where: dict[str, Any] | None = None,
+        where_document: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Queries the vector store for similar companies using semantic search.
 

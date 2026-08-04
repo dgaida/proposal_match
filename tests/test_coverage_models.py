@@ -1,12 +1,12 @@
 import json
-import pytest
+
 from app.models.models import (
     CompanyModel,
-    ResearchCallModel,
     MatchResultModel,
-    PartnerModel,
     MissingPartnerSearchModel,
+    PartnerModel,
     ProposalModel,
+    ResearchCallModel,
 )
 
 

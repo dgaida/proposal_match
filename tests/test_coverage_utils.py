@@ -1,28 +1,22 @@
-import os
-import json
 import time
-import pytest
 from unittest.mock import MagicMock, patch
-from datetime import datetime, timedelta
 
+import pytest
+
+from app.models.models import CompanyModel
+from app.utils import geo_utils
+from app.utils.db_manager import Company, DBManager
 from app.utils.file_utils import get_file_age_days
 from app.utils.fit_explorer import explore_fit
 from app.utils.geo_utils import (
-    get_coordinates,
     batch_geocode,
+    get_coordinates,
     load_cache,
     save_cache,
-    CACHE_FILE,
-    _geo_cache,
-    _failed_keys,
-    _nominatim_disabled,
 )
-import app.utils.geo_utils as geo_utils
 from app.utils.json_utils import parse_llm_json, parse_llm_json_list
 from app.utils.translations import translate
 from app.utils.vector_store import VectorStore
-from app.utils.db_manager import DBManager, Company
-from app.models.models import CompanyModel
 
 
 # ==========================================
@@ -130,17 +124,17 @@ def test_geo_utils_get_coordinates_nominatim_retry_then_success():
     mock_location.longitude = 13.40
 
     # First raises TimedOut, second returns location
-    with patch("app.utils.geo_utils._nominatim.geocode", side_effect=[GeocoderTimedOut("Timed out"), mock_location]) as mock_geocode:
-        with patch("time.sleep"):  # speed up tests
-            res = get_coordinates("Berlin", "Germany", retries=1)
-            assert res == (52.52, 13.40)
-            assert mock_geocode.call_count == 2
+    with patch("app.utils.geo_utils._nominatim.geocode", side_effect=[GeocoderTimedOut("Timed out"), mock_location]) as mock_geocode, \
+         patch("time.sleep"):  # speed up tests
+        res = get_coordinates("Berlin", "Germany", retries=1)
+        assert res == (52.52, 13.40)
+        assert mock_geocode.call_count == 2
 
 
 def test_geo_utils_get_coordinates_nominatim_rate_limited():
     from geopy.exc import GeocoderServiceError
     # Nominatim returns 429
-    with patch("app.utils.geo_utils._nominatim.geocode", side_effect=GeocoderServiceError("Error 429: Too many requests")) as mock_geo, \
+    with patch("app.utils.geo_utils._nominatim.geocode", side_effect=GeocoderServiceError("Error 429: Too many requests")), \
          patch("app.utils.geo_utils._photon.geocode") as mock_photon, \
          patch("time.sleep"):
 
@@ -394,10 +388,10 @@ def test_db_manager():
 
     # Test exception handling inside transactions (simulate failure on query or commit)
     with patch("sqlalchemy.orm.Session.commit", side_effect=Exception("Database error")):
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Database error"):
             db.add_company({"url": "https://error.com"})
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Database error"):
             db.update_companies([{"url": "https://company1.com", "city": "Failed"}])
 
     # insert duplicates so deduplicate actually commits (without mock active)
@@ -408,6 +402,6 @@ def test_db_manager():
     session.close()
 
     # Now run deduplicate under mock to make deduplicate commit fail
-    with patch("sqlalchemy.orm.Session.commit", side_effect=Exception("Database error")):
-        with pytest.raises(Exception):
-            db.deduplicate_companies()
+    with patch("sqlalchemy.orm.Session.commit", side_effect=Exception("Database error")), \
+         pytest.raises(Exception, match="Database error"):
+        db.deduplicate_companies()

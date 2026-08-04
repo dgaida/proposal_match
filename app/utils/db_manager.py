@@ -1,7 +1,9 @@
 import os
-from sqlalchemy import Column, Integer, String, Boolean, Text, create_engine
+from typing import Any
+
+from sqlalchemy import Boolean, Column, Integer, String, Text, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
-from typing import List, Dict, Any, Union
+
 from app.models.models import CompanyModel
 
 Base = declarative_base()
@@ -88,7 +90,7 @@ class DBManager:
                     )
                     conn.commit()
 
-    def add_company(self, company_data: Union[Dict[str, Any], CompanyModel]) -> None:
+    def add_company(self, company_data: dict[str, Any] | CompanyModel) -> None:
         """
         Adds a new company or updates an existing one by URL.
 
@@ -135,13 +137,13 @@ class DBManager:
                 session.add(company)
 
             session.commit()
-        except Exception as e:
+        except Exception:
             session.rollback()
-            raise e
+            raise
         finally:
             session.close()
 
-    def get_all_companies(self) -> List[Company]:
+    def get_all_companies(self) -> list[Company]:
         """
         Retrieves all company records from the database.
 
@@ -183,9 +185,9 @@ class DBManager:
                 session.commit()
                 return len(to_delete)
             return 0
-        except Exception as e:
+        except Exception:
             session.rollback()
-            raise e
+            raise
         finally:
             session.close()
 
@@ -219,7 +221,7 @@ class DBManager:
         return exists
 
     def update_companies(
-        self, updated_data: List[Union[Dict[str, Any], CompanyModel]]
+        self, updated_data: list[dict[str, Any] | CompanyModel]
     ) -> None:
         """
         Performs a batch update of company records.
@@ -242,8 +244,8 @@ class DBManager:
                             if hasattr(company, key):
                                 setattr(company, key, value)
             session.commit()
-        except Exception as e:
+        except Exception:
             session.rollback()
-            raise e
+            raise
         finally:
             session.close()

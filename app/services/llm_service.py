@@ -1,5 +1,6 @@
 import os
-from typing import List, Dict, Optional, Callable
+from collections.abc import Callable
+
 from llm_client import LLMClient
 
 
@@ -18,8 +19,8 @@ class LLMService:
     def __init__(
         self,
         provider: str = "openai",
-        api_key: Optional[str] = None,
-        llm_model: Optional[str] = None,
+        api_key: str | None = None,
+        llm_model: str | None = None,
     ):
         """
         Initializes the LLMService with a provider, API key, and model.
@@ -68,7 +69,7 @@ class LLMService:
         elif provider == "kiconnect":
             os.environ["KICONNECT_API_KEY"] = api_key
 
-    def chat_completion(self, messages: List[Dict[str, str]]) -> str:
+    def chat_completion(self, messages: list[dict[str, str]]) -> str:
         """
         Sends a chat completion request to the current LLM provider.
 
@@ -82,8 +83,8 @@ class LLMService:
 
     def chat_with_fallback(
         self,
-        messages: List[Dict[str, str]],
-        status_callback: Optional[Callable[[str], None]] = None,
+        messages: list[dict[str, str]],
+        status_callback: Callable[[str], None] | None = None,
     ) -> str:
         """
         Sends a chat completion request with fallback to other available providers on failure.
@@ -136,7 +137,7 @@ class LLMService:
         self,
         text: str,
         prompt: str,
-        status_callback: Optional[Callable[[str], None]] = None,
+        status_callback: Callable[[str], None] | None = None,
     ) -> str:
         """
         Uses the LLM to extract structured information from the provided text.
@@ -159,7 +160,7 @@ class LLMService:
         return self.chat_with_fallback(messages, status_callback=status_callback)
 
     def switch_config(
-        self, provider: str, api_key: str, llm_model: Optional[str] = None
+        self, provider: str, api_key: str, llm_model: str | None = None
     ) -> None:
         """
         Dynamically switches the LLM provider, API key, and model.
