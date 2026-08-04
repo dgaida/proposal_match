@@ -1,6 +1,7 @@
 from unittest.mock import patch
-from app.services.scraper_service import ScraperService
+
 from app.services.analyzer_service import AnalyzerService
+from app.services.scraper_service import ScraperService
 
 
 def test_scraper_service():

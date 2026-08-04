@@ -1,6 +1,8 @@
 import os
-from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, inspect
+
+from sqlalchemy import Boolean, Column, Integer, String, Text, create_engine, inspect
 from sqlalchemy.orm import declarative_base
+
 from app.utils.db_manager import DBManager
 
 

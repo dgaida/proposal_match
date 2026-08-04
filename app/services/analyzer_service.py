@@ -1,7 +1,8 @@
-from typing import Optional, Callable
+from collections.abc import Callable
+
+from app.models.models import ResearchCallModel
 from app.services.llm_service import LLMService
 from app.utils.json_utils import parse_llm_json
-from app.models.models import ResearchCallModel
 
 
 class AnalyzerService:
@@ -24,9 +25,9 @@ class AnalyzerService:
     def analyze_research_call(
         self,
         text: str,
-        url: Optional[str] = None,
-        status_callback: Optional[Callable[[str], None]] = None,
-    ) -> Optional[ResearchCallModel]:
+        url: str | None = None,
+        status_callback: Callable[[str], None] | None = None,
+    ) -> ResearchCallModel | None:
         """
         Analyzes a research call using LLM to extract key details.
 
@@ -61,21 +62,17 @@ class AnalyzerService:
 
         Return only the JSON object.
         """
-        try:
-            response = self.llm_service.extract_structured_data(
-                text, prompt, status_callback=status_callback
-            )
+        response = self.llm_service.extract_structured_data(
+            text, prompt, status_callback=status_callback
+        )
 
-            # Use the utility to extract JSON from the response
-            json_response = parse_llm_json(response)
-            if json_response:
-                try:
-                    return ResearchCallModel.model_validate(json_response)
-                except Exception as e:
-                    print(f"Failed to validate ResearchCallModel: {e}")
-                    return None
+        # Use the utility to extract JSON from the response
+        json_response = parse_llm_json(response)
+        if json_response:
+            try:
+                return ResearchCallModel.model_validate(json_response)
+            except Exception as e:  # noqa: BLE001
+                print(f"Failed to validate ResearchCallModel: {e}")
+                return None
 
-            return None
-        except Exception as e:
-            # Re-raise to let the caller handle the specific exception (useful for UI error messages)
-            raise e
+        return None

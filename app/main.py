@@ -1,25 +1,27 @@
-import streamlit as st
-import os
 import json
+import os
 import threading
-from typing import Optional, Dict, Any
+from typing import Any
+
+import streamlit as st
 from dotenv import load_dotenv
+from llm_client import LLMClient
 
 from app.services.llm_service import LLMService
-from app.utils.db_manager import DBManager
-from app.utils.vector_store import VectorStore
-from app.utils.translations import translate
-from app.utils.geo_utils import batch_geocode
 
 # UI Components
 from app.ui.tabs import render_summarization_tab
 from app.ui.tabs_content import (
+    render_database_tab,
     render_fit_tab,
     render_indexing_tab,
-    render_matching_tab,
     render_linkedin_tab,
-    render_database_tab,
+    render_matching_tab,
 )
+from app.utils.db_manager import DBManager
+from app.utils.geo_utils import batch_geocode
+from app.utils.translations import translate
+from app.utils.vector_store import VectorStore
 
 # Load credentials from secrets.env if it exists
 load_dotenv("secrets.env")
@@ -69,9 +71,12 @@ if "user_context" not in st.session_state:
 
 
 # LLM Service Initialization
-def get_llm_service() -> Optional[LLMService]:
+def get_llm_service() -> LLMService | None:
     """Initializes the LLM service based on sidebar configuration."""
-    providers = ["openai", "groq", "gemini", "ollama"]
+    try:
+        providers = LLMClient.get_supported_providers()
+    except Exception:  # noqa: BLE001
+        providers = ["openai", "groq", "gemini", "ollama", "kiconnect"]
     env_provider = os.getenv("LLM_PROVIDER", "openai").lower()
     default_index = providers.index(env_provider) if env_provider in providers else 0
 
@@ -169,13 +174,13 @@ if "fit_results" not in st.session_state:
         try:
             with open(fit_cache_path, "r", encoding="utf-8") as f:
                 st.session_state.fit_results = json.load(f)
-        except Exception:
+        except Exception:  # noqa: BLE001
             st.session_state.fit_results = None
     else:
         st.session_state.fit_results = None
 
 
-def parse_md_to_result(content: str) -> Dict[str, Any]:
+def parse_md_to_result(content: str) -> dict[str, Any]:
     """Parses metadata from .md summaries for matching service compatibility."""
     result = {}
     lines = content.split("\n")
@@ -218,7 +223,7 @@ def parse_md_to_result(content: str) -> Dict[str, Any]:
         desc_start = content.find("\n", desc_start) + 1
         desc_end = content.find("### Metadaten")
         result["Beschreibung"] = content[desc_start:desc_end].strip()
-    except Exception:
+    except Exception:  # noqa: BLE001
         result["Beschreibung"] = "No description found."
     return result
 

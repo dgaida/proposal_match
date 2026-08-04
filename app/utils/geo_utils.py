@@ -1,14 +1,15 @@
 import json
 import os
-import time
 import threading
-from typing import Optional, Tuple, Dict, List, Set, Any
+import time
+from typing import Any
+
+from geopy.exc import GeocoderServiceError, GeocoderTimedOut
 from geopy.geocoders import Nominatim, Photon
-from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 
 CACHE_FILE = "data/geo_cache.json"
-_geo_cache: Dict[str, Tuple[float, float]] = {}
-_failed_keys: Set[str] = set()
+_geo_cache: dict[str, tuple[float, float]] = {}
+_failed_keys: set[str] = set()
 _cache_lock = threading.Lock()
 
 # Global geolocator instances to reuse connections
@@ -21,7 +22,7 @@ _nominatim_disabled = False
 _nominatim_lock = threading.Lock()
 
 
-def load_cache() -> Dict[str, Tuple[float, float]]:
+def load_cache() -> dict[str, tuple[float, float]]:
     """
     Loads the geocoding cache from a JSON file.
 
@@ -44,7 +45,7 @@ def load_cache() -> Dict[str, Tuple[float, float]]:
     return {}
 
 
-def save_cache(cache: Dict[str, Tuple[float, float]]):
+def save_cache(cache: dict[str, tuple[float, float]]):
     """
     Saves the geocoding cache to a JSON file.
 
@@ -52,14 +53,13 @@ def save_cache(cache: Dict[str, Tuple[float, float]]):
         cache (Dict[str, Tuple[float, float]]): The geocoding cache to save.
     """
     os.makedirs(os.path.dirname(CACHE_FILE), exist_ok=True)
-    with _cache_lock:
-        with open(CACHE_FILE, "w", encoding="utf-8") as f:
-            json.dump(cache, f, ensure_ascii=False, indent=4)
+    with _cache_lock, open(CACHE_FILE, "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False, indent=4)
 
 
 def get_coordinates(
     city: str, country: str = "Germany", retries: int = 1, only_from_cache: bool = False
-) -> Optional[Tuple[float, float]]:
+) -> tuple[float, float] | None:
     """
     Fetches GPS coordinates for a city with multiple strategies and fallbacks.
 
@@ -143,7 +143,7 @@ def get_coordinates(
     return None
 
 
-def batch_geocode(companies: List[Any]):
+def batch_geocode(companies: list[Any]):
     """
     Background task to pre-geocode unique NRW company locations.
 

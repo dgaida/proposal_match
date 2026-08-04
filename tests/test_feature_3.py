@@ -1,8 +1,9 @@
 from unittest.mock import MagicMock, patch
+
 from app.services.indexing_service import IndexingService
+from app.services.llm_service import LLMService
 from app.utils.db_manager import DBManager
 from app.utils.vector_store import VectorStore
-from app.services.llm_service import LLMService
 
 
 def test_indexing_service():

@@ -1,11 +1,14 @@
 import json
-from typing import List, Dict, Any, Optional, Callable
+from collections.abc import Callable
+from typing import Any
+
 from ddgs import DDGS
-from app.services.llm_service import LLMService
-from app.utils.db_manager import DBManager, Company
-from app.utils.vector_store import VectorStore
-from app.utils.json_utils import parse_llm_json_list
+
 from app.models.models import MatchResultModel, ProposalModel, ResearchCallModel
+from app.services.llm_service import LLMService
+from app.utils.db_manager import Company, DBManager
+from app.utils.json_utils import parse_llm_json_list
+from app.utils.vector_store import VectorStore
 
 
 class MatchingService:
@@ -35,10 +38,10 @@ class MatchingService:
 
     def suggest_research_topics(
         self,
-        call_data: Dict[str, Any],
+        call_data: dict[str, Any],
         user_context: str = "",
-        matched_companies: List[Dict[str, Any]] = [],
-    ) -> List[str]:
+        matched_companies: list[dict[str, Any]] | None = None,
+    ) -> list[str]:
         """
         Suggests 5 project ideas for a research call and potential partners.
 
@@ -50,6 +53,8 @@ class MatchingService:
         Returns:
             List[str]: A list of suggested research topics and roles.
         """
+        if matched_companies is None:
+            matched_companies = []
         companies_info = "\n".join(
             [
                 f"- {c['name']} (Industry: {c['industry']}): {c['summary']}"
@@ -94,7 +99,7 @@ class MatchingService:
 
     def generate_multiple_matching_queries(
         self, context_data: Any, n: int = 5
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Generates multiple diverse semantic search queries in German.
 
@@ -159,10 +164,10 @@ class MatchingService:
     def hybrid_search(
         self,
         query: str,
-        filters: Optional[Dict[str, Any]] = None,
-        keywords: Optional[str] = None,
+        filters: dict[str, Any] | None = None,
+        keywords: str | None = None,
         limit: int = 10,
-    ) -> List[MatchResultModel]:
+    ) -> list[MatchResultModel]:
         """
         Finds matching organizations using a hybrid vector-metadata search.
 
@@ -277,11 +282,11 @@ class MatchingService:
 
     def generate_detailed_proposals(
         self,
-        call_data: ResearchCallModel | Dict[str, Any],
+        call_data: ResearchCallModel | dict[str, Any],
         user_context: str = "",
-        matched_companies: List[MatchResultModel] = [],
-        status_callback: Optional[Callable[[str], None]] = None,
-    ) -> List[ProposalModel]:
+        matched_companies: list[MatchResultModel] | None = None,
+        status_callback: Callable[[str], None] | None = None,
+    ) -> list[ProposalModel]:
         """
         Generates 5 detailed project proposals with missing partner discovery.
 
@@ -294,6 +299,8 @@ class MatchingService:
         Returns:
             List[ProposalModel]: A list of detailed project proposals.
         """
+        if matched_companies is None:
+            matched_companies = []
         if status_callback:
             status_callback(
                 "Generiere Projektideen und Suchanfragen für fehlende Partner..."
@@ -411,9 +418,9 @@ class MatchingService:
 
     def generate_match_justification(
         self,
-        call_data: ResearchCallModel | Dict[str, Any],
-        matched_companies: List[MatchResultModel],
-    ) -> List[MatchResultModel]:
+        call_data: ResearchCallModel | dict[str, Any],
+        matched_companies: list[MatchResultModel],
+    ) -> list[MatchResultModel]:
         """
         Generates a German justification for each matched organization.
 
@@ -455,7 +462,7 @@ class MatchingService:
 
         return results_with_justification
 
-    def search_internet_for_companies(self, topic: str) -> List[Dict[str, str]]:
+    def search_internet_for_companies(self, topic: str) -> list[dict[str, str]]:
         """
         Searches the web for new companies matching a research topic.
 

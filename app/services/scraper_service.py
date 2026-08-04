@@ -1,6 +1,6 @@
+
 import httpx
 from bs4 import BeautifulSoup
-from typing import Optional
 
 
 class ScraperService:
@@ -20,7 +20,7 @@ class ScraperService:
         """
         self.timeout = timeout
 
-    def fetch_page_content(self, url: str) -> Optional[dict]:
+    def fetch_page_content(self, url: str) -> dict | None:
         """
         Fetches the text content of a given URL and follows redirects.
 

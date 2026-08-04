@@ -1,8 +1,8 @@
 import json
-from typing import Dict, Any, Optional
+from typing import Any
 
 
-def parse_llm_json(response: str) -> Optional[Dict[str, Any]]:
+def parse_llm_json(response: str) -> dict[str, Any] | None:
     """
     Attempts to parse an LLM response string into a dictionary.
 
@@ -19,10 +19,8 @@ def parse_llm_json(response: str) -> Optional[Dict[str, Any]]:
 
     # Basic cleanup in case of extra text or markdown blocks
     clean_response = response.strip()
-    if clean_response.startswith("```json"):
-        clean_response = clean_response[7:]
-    if clean_response.endswith("```"):
-        clean_response = clean_response[:-3]
+    clean_response = clean_response.removeprefix("```json")
+    clean_response = clean_response.removesuffix("```")
 
     try:
         # First attempt: directly parse the entire response
@@ -41,7 +39,7 @@ def parse_llm_json(response: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def parse_llm_json_list(response: str) -> Optional[list]:
+def parse_llm_json_list(response: str) -> list | None:
     """
     Attempts to parse an LLM response string into a list.
 
@@ -58,10 +56,8 @@ def parse_llm_json_list(response: str) -> Optional[list]:
 
     # Basic cleanup in case of extra text or markdown blocks
     clean_response = response.strip()
-    if clean_response.startswith("```json"):
-        clean_response = clean_response[7:]
-    if clean_response.endswith("```"):
-        clean_response = clean_response[:-3]
+    clean_response = clean_response.removeprefix("```json")
+    clean_response = clean_response.removesuffix("```")
 
     try:
         # First attempt: directly parse the entire response

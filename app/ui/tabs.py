@@ -1,11 +1,13 @@
-import streamlit as st
 import os
 import urllib.parse
-from app.services.scraper_service import ScraperService
-from app.services.analyzer_service import AnalyzerService
-from app.utils.translations import translate
-from app.utils.file_utils import get_file_age_days
+
+import streamlit as st
+
 from app.models.models import ResearchCallModel
+from app.services.analyzer_service import AnalyzerService
+from app.services.scraper_service import ScraperService
+from app.utils.file_utils import get_file_age_days
+from app.utils.translations import translate
 
 
 def render_summarization_tab(llm_service, summaries_dir, parse_md_to_result):
@@ -65,12 +67,12 @@ def render_summarization_tab(llm_service, summaries_dir, parse_md_to_result):
                         )
                 except Exception as e:
                     status.update(label="Analysis Failed.", state="error")
-                    st.error(f"Error analyzing research call: {str(e)}")
+                    st.error(f"Error analyzing research call: {e!s}")
             else:
                 status.update(label="Failed to fetch URL.", state="error")
                 st.error("Failed to fetch the URL content.")
 
-    col_load1, col_load2 = st.columns([3, 1])
+    col_load1, _col_load2 = st.columns([3, 1])
     with col_load1:
         default_idx = 0
         if (

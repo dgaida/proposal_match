@@ -1,16 +1,18 @@
-import streamlit as st
-import os
 import json
+import os
+
 import pandas as pd
 import pydeck as pdk
+import streamlit as st
+
+from app.models.models import ProposalModel, ResearchCallModel
 from app.services.fit_service import FITService
 from app.services.indexing_service import IndexingService
-from app.services.matching_service import MatchingService
 from app.services.linkedin_service import LinkedInService
-from app.utils.translations import translate
+from app.services.matching_service import MatchingService
 from app.utils.file_utils import get_file_age_days
 from app.utils.geo_utils import get_coordinates
-from app.models.models import ResearchCallModel, ProposalModel
+from app.utils.translations import translate
 
 
 def render_fit_tab(llm_service, fit_username, fit_password):
@@ -259,8 +261,8 @@ def render_matching_tab(llm_service, db_manager, vector_store, parse_md_to_resul
 
     st.subheader(translate("filters", st.session_state.lang))
     companies = db_manager.get_all_companies()
-    countries = sorted(list({c.country for c in companies if c.country}))
-    states = sorted(list({c.state for c in companies if c.state}))
+    countries = sorted({c.country for c in companies if c.country})
+    states = sorted({c.state for c in companies if c.state})
 
     col_f1, col_f2, col_f3 = st.columns(3)
     with col_f1:
@@ -648,21 +650,21 @@ def render_database_tab(db_manager):
                 key="db_name_filter",
             )
         with col_f2:
-            countries = sorted(list({c.country for c in companies if c.country}))
+            countries = sorted({c.country for c in companies if c.country})
             country_filter = st.selectbox(
                 translate("filter_country", st.session_state.lang),
                 [translate("all_option", st.session_state.lang)] + countries,
                 key="db_country_filter",
             )
         with col_f3:
-            states = sorted(list({c.state for c in companies if c.state}))
+            states = sorted({c.state for c in companies if c.state})
             state_filter = st.selectbox(
                 translate("filter_state", st.session_state.lang),
                 [translate("all_option", st.session_state.lang)] + states,
                 key="db_state_filter",
             )
         with col_f4:
-            org_types = sorted(list({c.org_type for c in companies if c.org_type}))
+            org_types = sorted({c.org_type for c in companies if c.org_type})
             org_filter_options = [
                 translate("all_option", st.session_state.lang)
             ] + org_types
